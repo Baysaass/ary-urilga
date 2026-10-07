@@ -9,149 +9,160 @@ interface InvitationCoverProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// The final part of the scroll fades the fully opened envelope into the invitation.
-const OPENING_END = 0.82;
-const LAST_FRAME_MARGIN = 1 / 30;
-
 export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen, onOpenChange }) => {
   const coverRef = useRef<HTMLDivElement>(null);
-  const spacerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const scrollFrameRef = useRef<number | null>(null);
-  const progressRef = useRef(0);
-  const onOpenChangeRef = useRef(onOpenChange);
-  const openStateRef = useRef(isOpen);
-  const [progress, setProgress] = useState(0);
-  const [isEndFrame, setIsEndFrame] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [isFading, setIsFading] = useState(false);
   const [hasVideoError, setHasVideoError] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  onOpenChangeRef.current = onOpenChange;
+  const touchStartY = useRef<number | null>(null);
 
-  const reportOpenState = useCallback((open: boolean) => {
-    if (openStateRef.current === open) return;
-    openStateRef.current = open;
-    onOpenChangeRef.current(open);
-  }, []);
-
-  const seekVideo = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || !Number.isFinite(video.duration) || video.duration <= 0 || video.readyState < 2) return;
-    // Keep the newest scroll position while a seek is decoding; seeked catches up.
-    if (video.seeking) return;
-    const lastFrame = Math.max(0, video.duration - LAST_FRAME_MARGIN);
-    const target = Math.min(progressRef.current / OPENING_END, 1) * lastFrame;
-    if (Math.abs(video.currentTime - target) > LAST_FRAME_MARGIN / 2) {
-      video.currentTime = target;
+  // Lock body scroll while envelope is closed so the hero section stays centered at top-0
+  useEffect(() => {
+    if (!isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.scrollTo(0, 0);
     } else {
-      setIsEndFrame(video.currentTime >= lastFrame - LAST_FRAME_MARGIN / 2);
+      document.body.style.overflow = '';
     }
-  }, []);
-
-  const updateScroll = useCallback(() => {
-    scrollFrameRef.current = null;
-    const range = spacerRef.current?.offsetHeight ?? 0;
-    const next = range > 0 ? Math.min(1, Math.max(0, window.scrollY / range)) : 0;
-    progressRef.current = next;
-    setProgress(next);
-    if (next < 0.999) reportOpenState(false);
-    if (!prefersReducedMotion) seekVideo();
-  }, [prefersReducedMotion, reportOpenState, seekVideo]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollFrameRef.current === null) scrollFrameRef.current = requestAnimationFrame(updateScroll);
-    };
-    updateScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', updateScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', updateScroll);
-      if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
-      scrollFrameRef.current = null;
+      document.body.style.overflow = '';
     };
-  }, [updateScroll]);
-
-  useEffect(() => {
-    if (!isOpen) coverRef.current?.focus({ preventScroll: true });
   }, [isOpen]);
 
+  const handleFinishOpen = useCallback(() => {
+    setIsFading(true);
+    setTimeout(() => {
+      onOpenChange(true);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }, 400);
+  }, [onOpenChange]);
+
+  const startOpening = useCallback(() => {
+    if (isOpening || isFading || isOpen) return;
+    setIsOpening(true);
+
+    if (prefersReducedMotion || hasVideoError) {
+      handleFinishOpen();
+      return;
+    }
+
+    const video = videoRef.current;
+    if (video) {
+      video.playbackRate = 1.25;
+      video.play().catch(() => {
+        handleFinishOpen();
+      });
+    } else {
+      handleFinishOpen();
+    }
+  }, [handleFinishOpen, hasVideoError, isFading, isOpen, isOpening, prefersReducedMotion]);
+
+  // Check video progress
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration)) return;
+    // When video is in the final frames (letter fully revealed), transition smoothly to Hero section
+    if (video.currentTime >= video.duration - 0.2) {
+      handleFinishOpen();
+    }
+  };
+
+  const handleVideoEnded = () => {
+    handleFinishOpen();
+  };
+
+  // Detect user interactions to open (scroll wheel, touch swipe, or keyboard)
   useEffect(() => {
-    if (isOpen || progress < 0.999 || (!isEndFrame && !hasVideoError && !prefersReducedMotion)) return;
-    // Give the final decoded frame and opacity transition time to reach the screen.
-    const timer = window.setTimeout(() => reportOpenState(true), prefersReducedMotion ? 0 : 240);
-    return () => window.clearTimeout(timer);
-  }, [hasVideoError, isEndFrame, isOpen, prefersReducedMotion, progress, reportOpenState]);
+    if (isOpen) return;
 
-  const handleOpenClick = () => {
-    window.scrollTo({ top: spacerRef.current?.offsetHeight ?? 0, behavior: prefersReducedMotion ? 'instant' : 'smooth' });
-  };
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY > 5) {
+        startOpening();
+      }
+    };
 
-  const handleVideoReady = () => {
-    videoRef.current?.pause();
-    if (!prefersReducedMotion) seekVideo();
-  };
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
 
-  const fade = isEndFrame || hasVideoError || prefersReducedMotion
-    ? Math.min(1, Math.max(0, (progress - OPENING_END) / (1 - OPENING_END)))
-    : 0;
-  const opacity = 1 - fade * fade * (3 - 2 * fade);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (touchStartY.current === null) return;
+      const currentY = e.touches[0].clientY;
+      const delta = touchStartY.current - currentY;
+      if (Math.abs(delta) > 15) {
+        startOpening();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['Enter', ' ', 'ArrowDown', 'PageDown'].includes(e.key)) {
+        e.preventDefault();
+        startOpening();
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, startOpening]);
+
+  if (isOpen) return null;
 
   return (
-    <>
-      <div className="invitation-cover-spacer" ref={spacerRef} aria-hidden="true" />
+    <div
+      ref={coverRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${config.hosts} · Шинэ гэрийн урилга нээх`}
+      className="fixed inset-0 z-50 overflow-hidden cursor-pointer select-none"
+      onClick={startOpening}
+    >
       <div
-        ref={coverRef}
-        role={isOpen ? undefined : 'dialog'}
-        aria-modal={isOpen ? undefined : true}
-        aria-hidden={isOpen}
-        inert={isOpen}
-        aria-labelledby="invitation-cover-title"
-        aria-describedby="invitation-cover-instructions"
-        tabIndex={isOpen ? -1 : 0}
-        className="invitation-cover"
-        style={{ visibility: isOpen ? 'hidden' : 'visible' }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && event.target === event.currentTarget) {
-            event.preventDefault();
-            handleOpenClick();
-          }
-        }}
+        className="relative w-full h-[100svh] bg-[#181411] flex items-center justify-center transition-opacity duration-500 ease-out"
+        style={{ opacity: isFading ? 0 : 1 }}
       >
-        <h1 id="invitation-cover-title" className="sr-only">{config.hosts} · Шинэ гэрийн урилга</h1>
-        <p id="invitation-cover-instructions" className="sr-only">
-          Доош гүйлгэж дугтуйг нээнэ үү. Дээш гүйлгэхэд буцаж хаагдана. Гарнаас доош сум эсвэл Page Down ашиглана. Enter дарж урилгаа нээж болно.
-        </p>
-        <div className="invitation-cover-stage">
-          <div className="invitation-cover-scene" style={{ opacity }}>
-            <video
-              ref={videoRef}
-              className="invitation-cover-video"
-              src={`${import.meta.env.BASE_URL}video/invitation-opening.mp4`}
-              poster={`${import.meta.env.BASE_URL}video/invitation-opening.jpg`}
-              preload="auto"
-              muted
-              playsInline
-              disablePictureInPicture
-              aria-hidden="true"
-              onLoadedData={handleVideoReady}
-              onCanPlay={handleVideoReady}
-              onSeeked={seekVideo}
-              onError={() => setHasVideoError(true)}
-            />
+        <video
+          ref={videoRef}
+          className="w-full h-full max-w-[480px] object-cover object-center pointer-events-none"
+          src={`${import.meta.env.BASE_URL}video/invitation-opening.mp4`}
+          poster={`${import.meta.env.BASE_URL}video/invitation-opening.jpg`}
+          preload="auto"
+          muted
+          playsInline
+          disablePictureInPicture
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleVideoEnded}
+          onError={() => setHasVideoError(true)}
+        />
+
+        {/* Floating open button */}
+        {!isOpening && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-auto">
             <button
               type="button"
-              className="invitation-scroll-hint"
-              style={{ opacity: Math.max(0, 1 - progress / 0.16) }}
-              onClick={handleOpenClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                startOpening();
+              }}
+              className="flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[#FAF7F0]/95 text-[#29231E] shadow-2xl border border-[#B49368]/40 font-medium text-xs tracking-wider hover:bg-white active:scale-95 transition-all cursor-pointer animate-pulse"
               aria-label="Урилгаа нээх"
             >
-              <span>{prefersReducedMotion || hasVideoError ? 'Урилгаа нээх' : 'Доош гүйлгэж нээгээрэй'}</span>
-              <ArrowDown size={17} strokeWidth={1.5} aria-hidden="true" />
+              <span>Урилгаа нээх</span>
+              <ArrowDown size={15} strokeWidth={2} className="text-[#B6785D]" />
             </button>
           </div>
-        </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };

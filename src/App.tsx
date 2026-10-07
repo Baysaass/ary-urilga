@@ -93,6 +93,7 @@ export default function App() {
   // Enable guest actions and hand off focus without changing the scroll position.
   useEffect(() => {
     if (!isOpen) return;
+    window.scrollTo({ top: 0, behavior: 'instant' });
     void openGuestSession().catch(() => {});
     mainScrollContainerRef.current?.focus({ preventScroll: true });
   }, [isOpen]);
@@ -184,7 +185,7 @@ export default function App() {
         style={{
           maxWidth: desktopWidth === '100%' ? '100%' : `${desktopWidth}px`,
         }}
-        className="w-full sticky top-0 z-10 min-h-[100svh] bg-[#FAF7F0] paper-texture shadow-2xl flex flex-col justify-between focus:outline-none"
+        className="w-full relative z-10 min-h-[100svh] bg-[#FAF7F0] paper-texture shadow-2xl flex flex-col justify-between focus:outline-none"
       >
         {/* 1. CINEMATIC HERO SECTION */}
         <HeroSection
