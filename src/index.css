@@ -1,0 +1,326 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Mogul Anastasia Script';
+  src: local('Mogul Anastasia Script'), local('MogulAnastasiaScript');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pacifico';
+  src: url('/fonts/Pacifico-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+}
+
+@layer base {
+  :root {
+    --color-ivory: #FAF7F0;
+    --color-paper: #F3EBDD;
+    --color-paper-light: #FBF8F2;
+    --color-deep-brown: #29231E;
+    --color-gold: #B49368;
+    --color-gold-light: #D4B98E;
+    --color-clay: #B6785D;
+    --color-sage: #A8AD91;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+    --font-handwritten: 'Mogul Anastasia Script', 'Pacifico', cursive;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    background-color: #211B16;
+    color: var(--color-deep-brown);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+}
+
+.font-serif-title {
+  font-family: var(--font-ui);
+}
+
+.font-serif-editorial {
+  font-family: var(--font-handwritten);
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
+  letter-spacing: normal;
+}
+
+.font-sans-ui {
+  font-family: var(--font-ui);
+}
+
+.hero-portrait {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+  padding: max(70px, calc(env(safe-area-inset-top) + 54px)) 24px max(20px, env(safe-area-inset-bottom));
+  background: #5d3c26;
+  text-align: center;
+}
+
+.hero-portrait-image,
+.hero-portrait-shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-portrait-image {
+  object-fit: cover;
+  object-position: 52% 35%;
+}
+
+.hero-portrait-shade {
+  background:
+    linear-gradient(180deg, #faf7f0ed 0%, #faf7f0a3 18%, transparent 38%),
+    linear-gradient(0deg, #211711f5 0%, #211711ba 21%, transparent 55%);
+}
+
+.hero-portrait-greeting {
+  width: 100%;
+  color: #35251b;
+}
+
+.hero-portrait-kicker {
+  display: block;
+  margin-bottom: 7px;
+  color: #785639;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+.hero-portrait-hosts {
+  font-size: clamp(24px, 6.8vw, 30px);
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.hero-portrait-invitee {
+  margin-top: 3px;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.hero-portrait-content {
+  width: 100%;
+  margin-top: 160px;
+  color: #fff8ec;
+}
+
+.hero-portrait-title {
+  font-size: clamp(30px, 8.2vw, 38px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.hero-portrait-title > span {
+  display: block;
+  margin-top: 3px;
+  color: #edc79b;
+  font-size: clamp(38px, 10.5vw, 48px);
+  line-height: 1.3;
+}
+
+.hero-portrait-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.hero-portrait-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 17px;
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-portrait-date > span:nth-child(2) { color: #edc79b; }
+
+.hero-portrait-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  margin: 18px auto 0;
+  padding: 5px 14px;
+  color: #fff8ec;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.hero-portrait-scroll:focus-visible {
+  outline: 1px solid #edc79b;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* The same document scroll opens and reverses the envelope above a pinned invitation. */
+.invitation-cover {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  outline: none;
+}
+
+.invitation-cover-spacer {
+  width: 1px;
+  height: 180svh;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.invitation-cover-stage {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+}
+
+.invitation-cover-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  background: #181411;
+  transition: opacity 180ms linear;
+  will-change: opacity;
+}
+
+.invitation-cover-video {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #becb94;
+  pointer-events: none;
+}
+
+.invitation-scroll-hint {
+  position: absolute;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  min-height: 44px;
+  padding: 10px 17px;
+  border-radius: 999px;
+  background: #faf7f0ee;
+  color: #29231e;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 12px #24331914;
+  cursor: pointer;
+  transition: opacity 120ms linear;
+}
+
+.invitation-scroll-hint:focus-visible {
+  opacity: 1 !important;
+  outline: 2px solid #29231e;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invitation-cover-scene,
+  .invitation-scroll-hint { transition: none; }
+}
+/* Subtle paper texture using SVG data URI */
+.paper-texture {
+  background-color: #FAF7F0;
+  background-image: radial-gradient(#29231E08 0.75px, transparent 0.75px), radial-gradient(#29231E05 0.75px, #FAF7F0 0.75px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+.dark-paper-texture {
+  background-color: #1F1A16;
+  background-image: radial-gradient(#FAF7F00a 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
+}
+
+/* Wax seal emboss and shadow styling */
+.wax-seal-shadow {
+  box-shadow: 
+    0 10px 25px -5px rgba(182, 120, 93, 0.45),
+    0 8px 10px -6px rgba(41, 35, 30, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.wax-seal-gold-shadow {
+  box-shadow: 
+    0 12px 28px -5px rgba(180, 147, 104, 0.5),
+    0 8px 10px -6px rgba(41, 35, 30, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.paper-card-shadow {
+  box-shadow: 
+    0 4px 20px -2px rgba(41, 35, 30, 0.05),
+    0 1px 3px 0 rgba(41, 35, 30, 0.03);
+}
+
+.paper-emboss {
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    0 1px 2px rgba(41, 35, 30, 0.06);
+}
+
+/* Custom scrollbar for mobile container */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(180, 147, 104, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 147, 104, 0.5);
+}
+

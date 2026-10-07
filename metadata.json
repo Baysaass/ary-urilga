@@ -1,0 +1,6 @@
+{
+  "name": "mongolian-housewarming-invitation",
+  "description": "Танд урилга ирлээ - Батдорж & Ариунбаяр нарын шинэ гэрийн цайллагын интерактив цахим урилга.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
