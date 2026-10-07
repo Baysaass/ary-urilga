@@ -191,6 +191,38 @@
   border-radius: 4px;
 }
 
+.hero-portrait-close-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 auto 12px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  background: rgba(250, 247, 240, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(180, 147, 104, 0.4);
+  color: #433020;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-portrait-close-hint:hover {
+  background: rgba(250, 247, 240, 0.98);
+  color: #1f1812;
+  border-color: rgba(182, 120, 93, 0.6);
+  transform: translateY(-1px);
+}
+
+.hero-portrait-close-hint:active {
+  transform: scale(0.97);
+}
+
 /* The same document scroll opens and reverses the envelope above a pinned invitation. */
 .invitation-cover {
   position: fixed;

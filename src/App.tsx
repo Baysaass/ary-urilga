@@ -30,7 +30,7 @@ import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { AudioPlayer } from './components/AudioPlayer';
 import { AdminDashboard } from './components/AdminDashboard';
-import { Lock } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import { openGuestSession, refreshGuestData, subscribeGuestData, loginHost } from './lib/guest-data';
 import { getActiveEventDay, getEventDayInfo } from './lib/event-day';
 
@@ -141,12 +141,25 @@ export default function App() {
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#B6785D]/5 rounded-full blur-[160px]" />
       </div>
 
-      {/* Floating Header Toolbar (Discreet audio + host admin login + desktop switcher) */}
+      {/* Floating Header Toolbar (Discreet audio + close envelope + host admin login + desktop switcher) */}
       <header inert={!isOpen} className="fixed top-3 z-40 w-full max-w-[460px] px-4 flex items-center justify-between pointer-events-none">
         {/* Left: Audio Player */}
         <div className="pointer-events-auto">
           <AudioPlayer />
         </div>
+
+        {/* Center: Discreet Quick Close Envelope Button */}
+        {isOpen && (
+          <button
+            onClick={() => setIsOpen(false)}
+            title="Дугтуй руу буцах (Хаах)"
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-[#FAF7F0]/80 backdrop-blur-md border border-[#B49368]/30 flex items-center gap-1.5 text-[11px] text-[#29231E]/80 hover:text-[#29231E] hover:bg-[#FAF7F0] active:scale-95 transition-all shadow-sm cursor-pointer"
+            aria-label="Дугтуйг хаах"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#B6785D]" />
+            <span className="font-sans-ui text-[10px]">Хаах</span>
+          </button>
+        )}
 
         {/* Right: Discreet Admin Key */}
         <div className="flex items-center gap-1.5 pointer-events-auto">
@@ -203,6 +216,7 @@ export default function App() {
         <HeroSection
           config={activeConfig}
           onScrollDown={() => scrollToSection('intro-section')}
+          onCloseInvitation={() => setIsOpen(false)}
         />
 
         {/* 2. INTRODUCTION SECTION */}

@@ -1,14 +1,15 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, ChevronUp } from 'lucide-react';
 import { EventConfig } from '../types';
 
 interface HeroSectionProps {
   config: EventConfig;
   onScrollDown: () => void;
+  onCloseInvitation?: () => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown, onCloseInvitation }) => {
   const prefersReducedMotion = useReducedMotion();
 
   return (
@@ -30,6 +31,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }
         transition={{ duration: 0.7, delay: 0.2 }}
         className="hero-portrait-greeting"
       >
+        {onCloseInvitation && (
+          <button
+            type="button"
+            onClick={onCloseInvitation}
+            className="hero-portrait-close-hint"
+            aria-label="Дугтуйг буцааж хаах"
+          >
+            <ChevronUp size={14} strokeWidth={2} aria-hidden="true" />
+            <span>Дээш гүйлгэж дугтуйг хаах</span>
+          </button>
+        )}
         <span className="hero-portrait-kicker">ХҮНДЭТ ЗОЧИН ТАНАА</span>
         <h2 className="font-serif-editorial hero-portrait-hosts">{config.hosts}</h2>
         <p className="font-serif-editorial hero-portrait-invitee">{config.inviteeKicker}</p>

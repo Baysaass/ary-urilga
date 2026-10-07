@@ -16,9 +16,15 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
   const [isFading, setIsFading] = useState(false);
   const [hasVideoError, setHasVideoError] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  const touchStartY = useRef<number | null>(null);
 
-  // Lock body scroll while envelope is closed so the hero section stays centered at top-0
+  // Gesture tracking refs
+  const touchStartY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const isTouchAtTop = useRef(false);
+  const wheelDeltaAccumulator = useRef(0);
+  const wheelResetTimer = useRef<number | null>(null);
+
+  // Manage body scroll lock
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = 'hidden';
@@ -36,6 +42,8 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
     setTimeout(() => {
       onOpenChange(true);
       window.scrollTo({ top: 0, behavior: 'instant' });
+      setIsOpening(false);
+      setIsFading(false);
     }, 400);
   }, [onOpenChange]);
 
@@ -59,11 +67,34 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
     }
   }, [handleFinishOpen, hasVideoError, isFading, isOpen, isOpening, prefersReducedMotion]);
 
-  // Check video progress
+  const triggerClose = useCallback(() => {
+    if (!isOpen) return;
+
+    // 1. Immediately lock scroll at top so content doesn't jump
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.body.style.overflow = 'hidden';
+
+    // 2. Pause and reset video to start frame (closed envelope with wax seal)
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      try {
+        video.currentTime = 0;
+      } catch (e) {
+        // ignore seek error
+      }
+    }
+
+    // 3. Reset opening states and notify parent
+    setIsOpening(false);
+    setIsFading(false);
+    onOpenChange(false);
+  }, [isOpen, onOpenChange]);
+
+  // Video progress listener
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !Number.isFinite(video.duration)) return;
-    // When video is in the final frames (letter fully revealed), transition smoothly to Hero section
     if (video.currentTime >= video.duration - 0.2) {
       handleFinishOpen();
     }
@@ -73,21 +104,21 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
     handleFinishOpen();
   };
 
-  // Detect user interactions to open (scroll wheel, touch swipe, or keyboard)
+  // Listeners when closed: scroll down / swipe up / keys to OPEN
   useEffect(() => {
     if (isOpen) return;
 
-    const handleWheel = (e: WheelEvent) => {
+    const handleWheelOpen = (e: WheelEvent) => {
       if (e.deltaY > 5) {
         startOpening();
       }
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStartOpen = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const handleTouchMoveOpen = (e: TouchEvent) => {
       if (touchStartY.current === null) return;
       const currentY = e.touches[0].clientY;
       const delta = touchStartY.current - currentY;
@@ -96,36 +127,111 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDownOpen = (e: KeyboardEvent) => {
       if (['Enter', ' ', 'ArrowDown', 'PageDown'].includes(e.key)) {
         e.preventDefault();
         startOpening();
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheelOpen, { passive: true });
+    window.addEventListener('touchstart', handleTouchStartOpen, { passive: true });
+    window.addEventListener('touchmove', handleTouchMoveOpen, { passive: true });
+    window.addEventListener('keydown', handleKeyDownOpen);
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheelOpen);
+      window.removeEventListener('touchstart', handleTouchStartOpen);
+      window.removeEventListener('touchmove', handleTouchMoveOpen);
+      window.removeEventListener('keydown', handleKeyDownOpen);
     };
   }, [isOpen, startOpening]);
 
-  if (isOpen) return null;
+  // Listeners when open: scroll UP at top / swipe DOWN at top to CLOSE
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleWheelClose = (e: WheelEvent) => {
+      // Trigger close when at the top of page and user scrolls UP
+      if (window.scrollY <= 0 && e.deltaY < -6) {
+        wheelDeltaAccumulator.current += e.deltaY;
+        if (wheelDeltaAccumulator.current < -20) {
+          wheelDeltaAccumulator.current = 0;
+          triggerClose();
+        }
+        if (wheelResetTimer.current) window.clearTimeout(wheelResetTimer.current);
+        wheelResetTimer.current = window.setTimeout(() => {
+          wheelDeltaAccumulator.current = 0;
+        }, 300);
+      } else {
+        wheelDeltaAccumulator.current = 0;
+      }
+    };
+
+    const handleTouchStartClose = (e: TouchEvent) => {
+      if (window.scrollY <= 5) {
+        isTouchAtTop.current = true;
+        touchStartY.current = e.touches[0].clientY;
+        touchStartX.current = e.touches[0].clientX;
+      } else {
+        isTouchAtTop.current = false;
+        touchStartY.current = null;
+        touchStartX.current = null;
+      }
+    };
+
+    const handleTouchMoveClose = (e: TouchEvent) => {
+      if (!isTouchAtTop.current || touchStartY.current === null) return;
+      if (window.scrollY > 8) {
+        isTouchAtTop.current = false;
+        return;
+      }
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaY = currentY - touchStartY.current; // positive when dragging downward
+      const deltaX = Math.abs(currentX - (touchStartX.current || currentX));
+
+      // User pulled down while at top of page
+      if (deltaY > 35 && deltaY > deltaX) {
+        isTouchAtTop.current = false;
+        touchStartY.current = null;
+        triggerClose();
+      }
+    };
+
+    const handleKeyDownClose = (e: KeyboardEvent) => {
+      if (window.scrollY <= 0 && ['ArrowUp', 'PageUp'].includes(e.key)) {
+        triggerClose();
+      }
+    };
+
+    window.addEventListener('wheel', handleWheelClose, { passive: true });
+    window.addEventListener('touchstart', handleTouchStartClose, { passive: true });
+    window.addEventListener('touchmove', handleTouchMoveClose, { passive: true });
+    window.addEventListener('keydown', handleKeyDownClose);
+
+    return () => {
+      window.removeEventListener('wheel', handleWheelClose);
+      window.removeEventListener('touchstart', handleTouchStartClose);
+      window.removeEventListener('touchmove', handleTouchMoveClose);
+      window.removeEventListener('keydown', handleKeyDownClose);
+      if (wheelResetTimer.current) window.clearTimeout(wheelResetTimer.current);
+    };
+  }, [isOpen, triggerClose]);
 
   return (
     <div
       ref={coverRef}
       role="dialog"
-      aria-modal="true"
-      aria-label={`${config.hosts} · Шинэ гэрийн урилга нээх`}
-      className="fixed inset-0 z-50 overflow-hidden cursor-pointer select-none"
-      onClick={startOpening}
+      aria-modal={!isOpen}
+      aria-hidden={isOpen}
+      aria-label={`${config.hosts} · Шинэ гэрийн урилга`}
+      className={`fixed inset-0 z-50 overflow-hidden select-none transition-all duration-500 ease-out ${
+        isOpen
+          ? 'opacity-0 pointer-events-none invisible -translate-y-4'
+          : 'opacity-100 pointer-events-auto visible translate-y-0 cursor-pointer'
+      }`}
+      onClick={!isOpen ? startOpening : undefined}
     >
       <div
         className="relative w-full h-[100svh] bg-[#181411] flex items-center justify-center transition-opacity duration-500 ease-out"
@@ -146,7 +252,7 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
         />
 
         {/* Floating open button */}
-        {!isOpening && (
+        {!isOpening && !isOpen && (
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-auto">
             <button
               type="button"
