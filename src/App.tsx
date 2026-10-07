@@ -12,6 +12,9 @@ import {
   getTimeline,
   getGallery,
   getSymbolicGifts,
+  syncRsvpsFromSupabase,
+  syncEventConfigFromSupabase,
+  subscribeRsvps,
 } from './lib/storage';
 import { EventConfig, RSVP, Blessing, TimelineItem, GalleryPhoto, SymbolicGift } from './types';
 import { InvitationCover } from './components/InvitationCover';
@@ -64,8 +67,13 @@ export default function App() {
 
   useEffect(() => {
     refreshAllData();
-    const unsubscribe = subscribeGuestData(refreshAllData);
-    const sync = () => { void refreshGuestData().catch(() => {}); };
+    const unsubscribeGuest = subscribeGuestData(refreshAllData);
+    const unsubscribeRsvp = subscribeRsvps(refreshAllData);
+    const sync = () => {
+      void refreshGuestData().catch(() => {});
+      void syncRsvpsFromSupabase().catch(() => {});
+      void syncEventConfigFromSupabase().catch(() => {});
+    };
     sync();
     const interval = window.setInterval(sync, 5000);
     window.addEventListener('focus', sync);
@@ -75,7 +83,8 @@ export default function App() {
       setShowPinModal(true);
     }
     return () => {
-      unsubscribe();
+      unsubscribeGuest();
+      unsubscribeRsvp();
       window.clearInterval(interval);
       window.removeEventListener('focus', sync);
     };

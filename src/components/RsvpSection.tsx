@@ -17,7 +17,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => 
   const [errorMessage, setErrorMessage] = useState('');
 
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) {
       setErrorMessage('Та өөрийн нэрээ оруулна уу');
@@ -27,7 +27,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => 
     setIsSubmitting(true);
 
     try {
-      addRsvp({
+      await addRsvp({
         guest_name: guestName.trim(),
         attending: attending || 'yes',
         guest_count: attending === 'yes' ? guestCount : 0,
@@ -35,13 +35,12 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => 
         phone_or_note: note.trim(),
       });
 
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-        if (onSuccessSubmit) onSuccessSubmit();
-      }, 500);
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      if (onSuccessSubmit) onSuccessSubmit();
     } catch (err) {
       console.error(err);
+      setErrorMessage('Хадгалж чадсангүй. Дахин оролдоно уу.');
       setIsSubmitting(false);
     }
   };

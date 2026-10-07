@@ -1,5 +1,6 @@
 import { EventConfig, RSVP, Blessing, SymbolicGift, TimelineItem, GalleryPhoto } from '../types';
 import { resetGuestData } from './guest-data';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
   EVENT_CONFIG: 'mhw_event_config_v3',
@@ -33,7 +34,6 @@ export const DEFAULT_EVENT_CONFIG: EventConfig = {
 };
 
 export const DEFAULT_BLESSINGS: Blessing[] = [];
-
 export const DEFAULT_RSVPS: RSVP[] = [];
 
 export { SYMBOLIC_GIFTS as DEFAULT_SYMBOLIC_GIFTS } from './guest-data';
@@ -95,22 +95,23 @@ export const DEFAULT_GALLERY: GalleryPhoto[] = [
   },
 ];
 
+let rsvpMemoryCache: RSVP[] = [];
+let rsvpRealtimeInit = false;
+const rsvpListeners = new Set<() => void>();
+
+export function subscribeRsvps(listener: () => void) {
+  rsvpListeners.add(listener);
+  return () => { rsvpListeners.delete(listener); };
+}
+
+function notifyRsvpListeners() {
+  rsvpListeners.forEach(listener => listener());
+}
+
 export function getEventConfig(): EventConfig {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.EVENT_CONFIG);
     if (data) return { ...DEFAULT_EVENT_CONFIG, ...JSON.parse(data) };
-    const previousConfig = localStorage.getItem('mhw_event_config_v2');
-    if (previousConfig) {
-      return { ...DEFAULT_EVENT_CONFIG, ...JSON.parse(previousConfig), hosts: DEFAULT_EVENT_CONFIG.hosts };
-    }
-    const previous = localStorage.getItem('mhw_event_config_v1');
-    if (previous) {
-      const old = JSON.parse(previous);
-      return { ...DEFAULT_EVENT_CONFIG,
-        introQuote: old.introQuote || DEFAULT_EVENT_CONFIG.introQuote,
-        introSubtext: old.introSubtext || DEFAULT_EVENT_CONFIG.introSubtext,
-        closingQuote: old.closingQuote || DEFAULT_EVENT_CONFIG.closingQuote };
-    }
   } catch (e) {
     console.error(e);
   }
@@ -120,15 +121,72 @@ export function getEventConfig(): EventConfig {
 export function saveEventConfig(config: EventConfig): void {
   try {
     localStorage.setItem(STORAGE_KEYS.EVENT_CONFIG, JSON.stringify(config));
+    if (isSupabaseConfigured() && supabase) {
+      void supabase.from('event_config').upsert({
+        id: 'main',
+        hosts: config.hosts,
+        title: config.title,
+        subtitle: config.subtitle,
+        year: config.year,
+        month: config.month,
+        day: config.day,
+        time_range: config.timeRange,
+        location_city: config.locationCity,
+        location_district: config.locationDistrict,
+        location_address: config.locationAddress,
+        google_maps_url: config.googleMapsUrl,
+        intro_quote: config.introQuote,
+        intro_subtext: config.introSubtext,
+        closing_quote: config.closingQuote,
+      });
+    }
   } catch (e) {
     console.error(e);
   }
 }
 
+export async function syncEventConfigFromSupabase(): Promise<EventConfig | null> {
+  if (!isSupabaseConfigured() || !supabase) return null;
+  try {
+    const { data } = await supabase.from('event_config').select('*').eq('id', 'main').single();
+    if (data) {
+      const cfg: EventConfig = {
+        ...DEFAULT_EVENT_CONFIG,
+        hosts: data.hosts || DEFAULT_EVENT_CONFIG.hosts,
+        title: data.title || DEFAULT_EVENT_CONFIG.title,
+        subtitle: data.subtitle || DEFAULT_EVENT_CONFIG.subtitle,
+        year: data.year || DEFAULT_EVENT_CONFIG.year,
+        month: data.month || DEFAULT_EVENT_CONFIG.month,
+        day: data.day || DEFAULT_EVENT_CONFIG.day,
+        timeRange: data.time_range || DEFAULT_EVENT_CONFIG.timeRange,
+        locationCity: data.location_city || DEFAULT_EVENT_CONFIG.locationCity,
+        locationDistrict: data.location_district || DEFAULT_EVENT_CONFIG.locationDistrict,
+        locationAddress: data.location_address || DEFAULT_EVENT_CONFIG.locationAddress,
+        googleMapsUrl: data.google_maps_url || DEFAULT_EVENT_CONFIG.googleMapsUrl,
+        introQuote: data.intro_quote || DEFAULT_EVENT_CONFIG.introQuote,
+        introSubtext: data.intro_subtext || DEFAULT_EVENT_CONFIG.introSubtext,
+        closingQuote: data.closing_quote || DEFAULT_EVENT_CONFIG.closingQuote,
+      };
+      localStorage.setItem(STORAGE_KEYS.EVENT_CONFIG, JSON.stringify(cfg));
+      return cfg;
+    }
+  } catch (err) {
+    console.warn('Failed to sync event config from Supabase:', err);
+  }
+  return null;
+}
+
 export function getRsvps(): RSVP[] {
+  if (rsvpMemoryCache.length > 0) {
+    return rsvpMemoryCache;
+  }
   try {
     const data = localStorage.getItem(STORAGE_KEYS.RSVPS);
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed = JSON.parse(data);
+      rsvpMemoryCache = parsed;
+      return parsed;
+    }
   } catch (e) {
     console.error(e);
   }
@@ -136,21 +194,85 @@ export function getRsvps(): RSVP[] {
 }
 
 export function saveRsvps(rsvps: RSVP[]): void {
+  rsvpMemoryCache = rsvps;
   try {
     localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify(rsvps));
   } catch (e) {
     console.error(e);
   }
+  notifyRsvpListeners();
 }
 
-export function addRsvp(rsvp: Omit<RSVP, 'id' | 'created_at'>): RSVP {
-  const all = getRsvps();
+export async function syncRsvpsFromSupabase(): Promise<RSVP[]> {
+  if (!isSupabaseConfigured() || !supabase) return getRsvps();
+
+  if (!rsvpRealtimeInit) {
+    rsvpRealtimeInit = true;
+    try {
+      supabase
+        .channel('rsvps_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'rsvps' }, () => {
+          void syncRsvpsFromSupabase();
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('RSVP realtime subscription error:', err);
+    }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('rsvps')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Failed to fetch RSVPs from Supabase:', error.message);
+      return getRsvps();
+    }
+
+    const fetchedRsvps: RSVP[] = (data || []).map(r => ({
+      id: r.id,
+      guest_name: r.guest_name,
+      attending: r.attending as 'yes' | 'no',
+      guest_count: r.guest_count,
+      arrival_time: r.arrival_time || '',
+      phone_or_note: r.phone_or_note || '',
+      created_at: r.created_at,
+    }));
+
+    saveRsvps(fetchedRsvps);
+    return fetchedRsvps;
+  } catch (err) {
+    console.warn('Error syncing RSVPs:', err);
+    return getRsvps();
+  }
+}
+
+export async function addRsvp(rsvp: Omit<RSVP, 'id' | 'created_at'>): Promise<RSVP> {
   const newItem: RSVP = {
     ...rsvp,
     id: 'rsvp-' + Date.now(),
     created_at: new Date().toISOString(),
   };
-  const updated = [newItem, ...all];
+
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase.from('rsvps').insert({
+      guest_name: rsvp.guest_name,
+      attending: rsvp.attending,
+      guest_count: rsvp.guest_count,
+      arrival_time: rsvp.arrival_time,
+      phone_or_note: rsvp.phone_or_note,
+    }).select().single();
+
+    if (!error && data) {
+      newItem.id = data.id;
+      newItem.created_at = data.created_at;
+    }
+  }
+
+  const all = getRsvps();
+  const updated = [newItem, ...all.filter(r => r.id !== newItem.id)];
   saveRsvps(updated);
   return newItem;
 }
@@ -199,6 +321,10 @@ export function saveGallery(items: GalleryPhoto[]): void {
 
 export async function resetAllToDefaults(): Promise<void> {
   await resetGuestData();
+  if (isSupabaseConfigured() && supabase) {
+    await supabase.from('rsvps').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  }
+  rsvpMemoryCache = [];
   localStorage.removeItem(STORAGE_KEYS.EVENT_CONFIG);
   localStorage.removeItem('mhw_event_config_v2');
   localStorage.removeItem('mhw_event_config_v1');
@@ -207,4 +333,5 @@ export async function resetAllToDefaults(): Promise<void> {
   localStorage.removeItem(STORAGE_KEYS.SYMBOLIC);
   localStorage.removeItem(STORAGE_KEYS.TIMELINE);
   localStorage.removeItem(STORAGE_KEYS.GALLERY);
+  notifyRsvpListeners();
 }
