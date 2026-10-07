@@ -746,7 +746,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
                     <label className="block font-medium text-slate-700 mb-1">Он</label>
                     <input
@@ -770,12 +770,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">Өдөр</label>
+                    <label className="block font-medium text-slate-700 mb-1">1-р өдөр</label>
                     <input
                       type="number"
                       value={editingConfig.day}
                       onChange={(e) =>
-                        setEditingConfig({ ...editingConfig, day: parseInt(e.target.value) || 18 })
+                        setEditingConfig({ ...editingConfig, day: parseInt(e.target.value) || 23 })
+                      }
+                      className="w-full p-2.5 border border-slate-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">2-р өдөр</label>
+                    <input
+                      type="number"
+                      value={editingConfig.day2 || 24}
+                      onChange={(e) =>
+                        setEditingConfig({ ...editingConfig, day2: parseInt(e.target.value) || 24 })
                       }
                       className="w-full p-2.5 border border-slate-300 rounded-lg"
                     />

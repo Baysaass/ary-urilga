@@ -112,7 +112,22 @@ function notifyRsvpListeners() {
 export function getEventConfig(): EventConfig {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.EVENT_CONFIG);
-    if (data) return { ...DEFAULT_EVENT_CONFIG, ...JSON.parse(data) };
+    if (data) {
+      const parsed = JSON.parse(data);
+      // Sanitize stale config: if day is 9 or missing, force October 23, 2026
+      const day = (!parsed.day || parsed.day === 9) ? 23 : parsed.day;
+      const day2 = !parsed.day2 ? 24 : parsed.day2;
+      const month = (!parsed.month || parsed.month === 9) ? 10 : parsed.month;
+      const year = parsed.year || 2026;
+      return {
+        ...DEFAULT_EVENT_CONFIG,
+        ...parsed,
+        day,
+        day2,
+        month,
+        year,
+      };
+    }
   } catch (e) {
     console.error(e);
   }
@@ -131,6 +146,7 @@ export function saveEventConfig(config: EventConfig): void {
         year: config.year,
         month: config.month,
         day: config.day,
+        day2: config.day2 || 24,
         time_range: config.timeRange,
         location_city: config.locationCity,
         location_district: config.locationDistrict,
@@ -151,14 +167,19 @@ export async function syncEventConfigFromSupabase(): Promise<EventConfig | null>
   try {
     const { data } = await supabase.from('event_config').select('*').eq('id', 'main').single();
     if (data) {
+      // Sanitize any stale day=9 or month=9 in Supabase
+      const day = (!data.day || data.day === 9) ? 23 : data.day;
+      const day2 = !data.day2 ? 24 : data.day2;
+      const month = (!data.month || data.month === 9) ? 10 : data.month;
       const cfg: EventConfig = {
         ...DEFAULT_EVENT_CONFIG,
         hosts: data.hosts || DEFAULT_EVENT_CONFIG.hosts,
         title: data.title || DEFAULT_EVENT_CONFIG.title,
         subtitle: data.subtitle || DEFAULT_EVENT_CONFIG.subtitle,
         year: data.year || DEFAULT_EVENT_CONFIG.year,
-        month: data.month || DEFAULT_EVENT_CONFIG.month,
-        day: data.day || DEFAULT_EVENT_CONFIG.day,
+        month,
+        day,
+        day2,
         timeRange: data.time_range || DEFAULT_EVENT_CONFIG.timeRange,
         locationCity: data.location_city || DEFAULT_EVENT_CONFIG.locationCity,
         locationDistrict: data.location_district || DEFAULT_EVENT_CONFIG.locationDistrict,

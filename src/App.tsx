@@ -32,6 +32,7 @@ import { AudioPlayer } from './components/AudioPlayer';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Lock } from 'lucide-react';
 import { openGuestSession, refreshGuestData, subscribeGuestData, loginHost } from './lib/guest-data';
+import { getActiveEventDay, getEventDayInfo } from './lib/event-day';
 
 export default function App() {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,16 +54,15 @@ export default function App() {
   // Desktop viewport preview mode
   const [desktopWidth, setDesktopWidth] = useState<'390' | '430' | '100%'>('430');
 
-  // Check URL params for day selection (?day=1 or ?day=2)
-  const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const dayParam = urlParams.get('day');
-  const selectedDay: 1 | 2 | undefined = dayParam === '2' ? 2 : (dayParam === '1' ? 1 : undefined);
+  // Strictly determine Day 1 vs Day 2 from URL (?day=1, ?day=2, /day1, /day2, etc.)
+  const selectedDay = getActiveEventDay();
+  const dayInfo = getEventDayInfo(selectedDay);
 
   const activeConfig: EventConfig = {
     ...config,
     selectedDay,
-    day: selectedDay === 2 ? (config.day2 || 24) : (config.day || 23),
-    day2: config.day2 || 24,
+    day: dayInfo.dayOfMonth, // strictly 23 for Day 1, 24 for Day 2
+    day2: 24,
   };
 
   const mainScrollContainerRef = useRef<HTMLDivElement>(null);

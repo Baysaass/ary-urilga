@@ -12,9 +12,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccess
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null);
   const [guestName, setGuestName] = useState('');
   const [guestCount, setGuestCount] = useState(2);
-  const [chosenDay, setChosenDay] = useState<'10-23' | '10-24'>(
-    selectedDay === 2 ? '10-24' : '10-23'
-  );
+  const chosenDay: '10-23' | '10-24' = selectedDay === 2 ? '10-24' : '10-23';
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -187,46 +185,12 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccess
 
                   {/* Event Day selection if attending */}
                   {attending === 'yes' && (
-                    selectedDay ? (
-                      <div className="p-3 rounded-xl bg-[#F7EEE8] border border-[#B6785D]/30 flex items-center justify-between text-xs">
-                        <span className="text-[#29231E]/80 font-medium">Хүрэлцэн ирэх өдөр:</span>
-                        <span className="font-semibold text-[#B6785D]">
-                          {selectedDay === 1 ? '10 сарын 23 (Баасан)' : '10 сарын 24 (Бямба)'}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[#29231E]/80">
-                          Аль өдөр нь хүрэлцэн ирэх вэ? <span className="text-[#B6785D]">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setChosenDay('10-23')}
-                            className={`p-2.5 rounded-xl border text-xs text-center transition-all cursor-pointer ${
-                              chosenDay === '10-23'
-                                ? 'border-[#B6785D] bg-[#F7EEE8] text-[#29231E] font-semibold shadow-sm'
-                                : 'border-[#B49368]/20 bg-[#FBF8F2] text-[#29231E]/80'
-                            }`}
-                          >
-                            <div>1 дэх өдөр</div>
-                            <div className="text-[11px] text-[#B6785D] font-medium">10.23 (Баасан)</div>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setChosenDay('10-24')}
-                            className={`p-2.5 rounded-xl border text-xs text-center transition-all cursor-pointer ${
-                              chosenDay === '10-24'
-                                ? 'border-[#B6785D] bg-[#F7EEE8] text-[#29231E] font-semibold shadow-sm'
-                                : 'border-[#B49368]/20 bg-[#FBF8F2] text-[#29231E]/80'
-                            }`}
-                          >
-                            <div>2 дахь өдөр</div>
-                            <div className="text-[11px] text-[#B6785D] font-medium">10.24 (Бямба)</div>
-                          </button>
-                        </div>
-                      </div>
-                    )
+                    <div className="p-3 rounded-xl bg-[#F7EEE8] border border-[#B6785D]/30 flex items-center justify-between text-xs">
+                      <span className="text-[#29231E]/80 font-medium">Хүрэлцэн ирэх өдөр:</span>
+                      <span className="font-semibold text-[#B6785D]">
+                        {selectedDay === 2 ? '10 сарын 24 (Бямба)' : '10 сарын 23 (Баасан)'}
+                      </span>
+                    </div>
                   )}
 
                   {attending === 'yes' && (
