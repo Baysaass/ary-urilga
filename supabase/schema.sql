@@ -46,8 +46,12 @@ create table if not exists public.rsvps (
   guest_count integer not null default 1,
   arrival_time text default '',
   phone_or_note text default '',
+  event_day text default '10-23',
   created_at timestamptz not null default now()
 );
+
+-- Хэрэв хүснэгт өмнө нь үүссэн бол баганыг нэмэх:
+alter table public.rsvps add column if not exists event_day text default '10-23';
 
 -- 5. Эвент тохиргоо (Event Config)
 create table if not exists public.event_config (

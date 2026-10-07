@@ -63,6 +63,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'rsvps' | 'blessings' | 'settings' | 'timeline' | 'gallery'>('overview');
   const [blessingFilter, setBlessingFilter] = useState<BlessingStatus | 'all'>('pending');
+  const [dayFilter, setDayFilter] = useState<'all' | '10-23' | '10-24'>('all');
   const [editingConfig, setEditingConfig] = useState<EventConfig>({ ...config });
   const [editingBlessingId, setEditingBlessingId] = useState<string | null>(null);
   const [editBlessingMsg, setEditBlessingMsg] = useState('');
@@ -72,6 +73,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Overview Stats
   const attendingRsvps = rsvps.filter((r) => r.attending === 'yes');
   const totalGuests = attendingRsvps.reduce((acc, r) => acc + (r.guest_count || 1), 0);
+  const attendingDay1 = attendingRsvps.filter((r) => (r.event_day || '10-23') === '10-23');
+  const totalDay1Guests = attendingDay1.reduce((acc, r) => acc + (r.guest_count || 1), 0);
+  const attendingDay2 = attendingRsvps.filter((r) => r.event_day === '10-24');
+  const totalDay2Guests = attendingDay2.reduce((acc, r) => acc + (r.guest_count || 1), 0);
   const notAttendingRsvps = rsvps.filter((r) => r.attending === 'no');
   const pendingBlessings = blessings.filter((b) => b.status === 'pending');
   const approvedBlessings = blessings.filter((b) => b.status === 'approved');
@@ -110,9 +115,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportRsvpsCsv = () => {
-    const headers = ['Нэр', 'Ирэх эсэх', 'Хүний тоо', 'Цаг', 'Тэмдэглэл/Утас', 'Огноо'];
+    const headers = ['Нэр', 'Цайллагын өдөр', 'Ирэх эсэх', 'Хүний тоо', 'Цаг', 'Тэмдэглэл/Утас', 'Огноо'];
     const rows = rsvps.map((r) => [
       `"${r.guest_name.replace(/"/g, '""')}"`,
+      r.event_day === '10-24' ? '10 сарын 24 (Бямба)' : '10 сарын 23 (Баасан)',
       r.attending === 'yes' ? 'Ирнэ' : 'Амжихгүй',
       r.guest_count,
       `"${r.arrival_time}"`,
@@ -248,31 +254,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                   <span className="text-xs text-slate-500 font-medium block">
-                    Ирэхээр баталгаажуулсан
+                    1 дэх өдөр: 10.23 (Баасан)
                   </span>
                   <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-slate-900">
-                      {attendingRsvps.length}
+                    <span className="text-3xl font-bold text-amber-700">
+                      {totalDay1Guests}
                     </span>
-                    <span className="text-xs text-emerald-600 font-medium">бүлэг / хүн</span>
+                    <span className="text-xs text-amber-700 font-medium">зочин</span>
                   </div>
                   <span className="text-[11px] text-slate-400 mt-1 block">
-                    Нийт {totalGuests} зочин хүрэлцэн ирнэ
+                    {attendingDay1.length} бүртгэл / бүлэг
                   </span>
                 </div>
 
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                   <span className="text-xs text-slate-500 font-medium block">
-                    Нийт зочдын тоо
+                    2 дахь өдөр: 10.24 (Бямба)
                   </span>
                   <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-indigo-600">
-                      {totalGuests}
+                      {totalDay2Guests}
                     </span>
-                    <span className="text-xs text-slate-500">хүн</span>
+                    <span className="text-xs text-indigo-600 font-medium">зочин</span>
                   </div>
                   <span className="text-[11px] text-slate-400 mt-1 block">
-                    Боломжгүй гэсэн: {notAttendingRsvps.length}
+                    {attendingDay2.length} бүртгэл / бүлэг
                   </span>
                 </div>
 
@@ -417,7 +423,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Day Filter Tabs */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDayFilter('all')}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        dayFilter === 'all'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Бүгд ({rsvps.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDayFilter('10-23')}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        dayFilter === '10-23'
+                          ? 'bg-white text-amber-800 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      10.23 Баасан ({rsvps.filter(r => (r.event_day || '10-23') === '10-23').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDayFilter('10-24')}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                        dayFilter === '10-24'
+                          ? 'bg-white text-indigo-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      10.24 Бямба ({rsvps.filter(r => r.event_day === '10-24').length})
+                    </button>
+                  </div>
+
                   <button
                     onClick={handleExportRsvpsCsv}
                     className="px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
@@ -435,6 +478,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
                       <tr>
                         <th className="py-3 px-4 font-semibold">Зочны нэр</th>
+                        <th className="py-3 px-4 font-semibold">Цайллагын өдөр</th>
                         <th className="py-3 px-4 font-semibold">Ирэх эсэх</th>
                         <th className="py-3 px-4 font-semibold">Хүний тоо</th>
                         <th className="py-3 px-4 font-semibold">Хүрэлцэн ирэх цаг</th>
@@ -443,10 +487,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {rsvps.map((rsvp) => (
+                      {rsvps
+                        .filter((r) => dayFilter === 'all' || (r.event_day || '10-23') === dayFilter)
+                        .map((rsvp) => (
                         <tr key={rsvp.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4 font-medium text-slate-900">
                             {rsvp.guest_name}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[11px] font-medium ${
+                                rsvp.event_day === '10-24'
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'
+                                  : 'bg-amber-50 text-amber-800 border border-amber-200/60'
+                              }`}
+                            >
+                              {rsvp.event_day === '10-24' ? '10.24 (Бямба)' : '10.23 (Баасан)'}
+                            </span>
                           </td>
                           <td className="py-3 px-4">
                             {rsvp.attending === 'yes' ? (

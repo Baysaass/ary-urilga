@@ -4,18 +4,21 @@ import { Check, Heart, Minus, Plus, Sparkles, Send } from 'lucide-react';
 import { addRsvp } from '../lib/storage';
 
 interface RsvpSectionProps {
+  selectedDay?: 1 | 2;
   onSuccessSubmit?: () => void;
 }
 
-export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => {
+export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccessSubmit }) => {
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null);
   const [guestName, setGuestName] = useState('');
   const [guestCount, setGuestCount] = useState(2);
+  const [chosenDay, setChosenDay] = useState<'10-23' | '10-24'>(
+    selectedDay === 2 ? '10-24' : '10-23'
+  );
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => 
         guest_count: attending === 'yes' ? guestCount : 0,
         arrival_time: '',
         phone_or_note: note.trim(),
+        event_day: chosenDay,
       });
 
       setIsSubmitting(false);
@@ -180,6 +184,50 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ onSuccessSubmit }) => 
                       className="w-full px-3.5 py-2.5 rounded-xl border border-[#B49368]/30 bg-white text-sm text-[#29231E] placeholder:text-[#29231E]/30 focus:outline-none focus:border-[#B6785D] transition-colors"
                     />
                   </div>
+
+                  {/* Event Day selection if attending */}
+                  {attending === 'yes' && (
+                    selectedDay ? (
+                      <div className="p-3 rounded-xl bg-[#F7EEE8] border border-[#B6785D]/30 flex items-center justify-between text-xs">
+                        <span className="text-[#29231E]/80 font-medium">Хүрэлцэн ирэх өдөр:</span>
+                        <span className="font-semibold text-[#B6785D]">
+                          {selectedDay === 1 ? '10 сарын 23 (Баасан)' : '10 сарын 24 (Бямба)'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-[#29231E]/80">
+                          Аль өдөр нь хүрэлцэн ирэх вэ? <span className="text-[#B6785D]">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setChosenDay('10-23')}
+                            className={`p-2.5 rounded-xl border text-xs text-center transition-all cursor-pointer ${
+                              chosenDay === '10-23'
+                                ? 'border-[#B6785D] bg-[#F7EEE8] text-[#29231E] font-semibold shadow-sm'
+                                : 'border-[#B49368]/20 bg-[#FBF8F2] text-[#29231E]/80'
+                            }`}
+                          >
+                            <div>1 дэх өдөр</div>
+                            <div className="text-[11px] text-[#B6785D] font-medium">10.23 (Баасан)</div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setChosenDay('10-24')}
+                            className={`p-2.5 rounded-xl border text-xs text-center transition-all cursor-pointer ${
+                              chosenDay === '10-24'
+                                ? 'border-[#B6785D] bg-[#F7EEE8] text-[#29231E] font-semibold shadow-sm'
+                                : 'border-[#B49368]/20 bg-[#FBF8F2] text-[#29231E]/80'
+                            }`}
+                          >
+                            <div>2 дахь өдөр</div>
+                            <div className="text-[11px] text-[#B6785D] font-medium">10.24 (Бямба)</div>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
 
                   {attending === 'yes' && (
                     <>

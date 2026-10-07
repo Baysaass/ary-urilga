@@ -49,7 +49,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }
         <div className="hero-portrait-date">
           <span>{config.year}</span>
           <span aria-hidden="true">·</span>
-          <span>{String(config.month).padStart(2, '0')}.{String(config.day).padStart(2, '0')}</span>
+          <span>
+            {config.selectedDay === 1
+              ? '10.23 (Баасан)'
+              : config.selectedDay === 2
+              ? '10.24 (Бямба)'
+              : '10.23 · 10.24'}
+          </span>
         </div>
         <button type="button" className="hero-portrait-scroll" onClick={onScrollDown}>
           <span>Доош гүйлгэнэ үү</span>

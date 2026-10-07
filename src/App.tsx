@@ -53,6 +53,18 @@ export default function App() {
   // Desktop viewport preview mode
   const [desktopWidth, setDesktopWidth] = useState<'390' | '430' | '100%'>('430');
 
+  // Check URL params for day selection (?day=1 or ?day=2)
+  const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const dayParam = urlParams.get('day');
+  const selectedDay: 1 | 2 | undefined = dayParam === '2' ? 2 : (dayParam === '1' ? 1 : undefined);
+
+  const activeConfig: EventConfig = {
+    ...config,
+    selectedDay,
+    day: selectedDay === 2 ? (config.day2 || 24) : (config.day || 23),
+    day2: config.day2 || 24,
+  };
+
   const mainScrollContainerRef = useRef<HTMLDivElement>(null);
 
   const refreshAllData = () => {
@@ -189,23 +201,23 @@ export default function App() {
       >
         {/* 1. CINEMATIC HERO SECTION */}
         <HeroSection
-          config={config}
+          config={activeConfig}
           onScrollDown={() => scrollToSection('intro-section')}
         />
 
         {/* 2. INTRODUCTION SECTION */}
         <div id="intro-section">
-          <IntroductionSection config={config} />
+          <IntroductionSection config={activeConfig} />
         </div>
 
         {/* 4. DATE REVEAL & LIVE COUNTDOWN */}
-        <DateCountdownSection config={config} />
+        <DateCountdownSection config={activeConfig} />
 
         {/* 5. FEATURED BLESSING SPOTLIGHT */}
         <FeaturedBlessing blessings={publicBlessings} onWriteBlessing={() => scrollToSection('blessing-form-section')} />
 
         {/* 6. IMMERSIVE LOCATION & MAP SECTION */}
-        <LocationSection config={config} />
+        <LocationSection config={activeConfig} />
 
         {/* 8. SYMBOLIC INTERACTION (Leave a gift for the new home) */}
         <SymbolicInteraction
@@ -223,18 +235,18 @@ export default function App() {
         />
 
         {/* 12. INTERACTIVE RSVP */}
-        <RsvpSection onSuccessSubmit={refreshAllData} />
+        <RsvpSection selectedDay={selectedDay} onSuccessSubmit={refreshAllData} />
 
         {/* 13. CLOSING SECTION */}
         <ClosingSection
-          config={config}
+          config={activeConfig}
           onGoToRsvp={() => scrollToSection('rsvp-section')}
           onGoToBlessing={() => scrollToSection('blessing-form-section')}
         />
 
         {/* Minimal Footer */}
         <footer className="py-6 px-4 text-center border-t border-[#B49368]/20 bg-[#FAF7F0] text-[11px] text-[#29231E]/50 font-sans-ui">
-          <p>© 2026 {config.hosts} · Шинэ гэрийн цайллага</p>
+          <p>© 2026 {activeConfig.hosts} · Шинэ гэрийн цайллага</p>
           <button
             onClick={() => {
               if (isAdminAuthenticated) setIsAdminOpen(true);
@@ -248,7 +260,7 @@ export default function App() {
       </div>
 
       {/* The trailing spacer lets the invitation stay pinned throughout the cover scroll. */}
-      <InvitationCover config={config} isOpen={isOpen} onOpenChange={setIsOpen} />
+      <InvitationCover config={activeConfig} isOpen={isOpen} onOpenChange={setIsOpen} />
 
       {/* ADMIN PIN CODE MODAL */}
       {showPinModal && (

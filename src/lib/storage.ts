@@ -20,8 +20,9 @@ export const DEFAULT_EVENT_CONFIG: EventConfig = {
   subtitle: 'хүндэтгэн урьж байна.',
   year: 2026,
   month: 10,
-  day: 9,
-  timeRange: '',
+  day: 23,
+  day2: 24,
+  timeRange: '15:00 цагаас',
   timeStartTime: '',
   timeEndTime: '',
   locationCity: 'Даланзадгад',
@@ -238,6 +239,7 @@ export async function syncRsvpsFromSupabase(): Promise<RSVP[]> {
       guest_count: r.guest_count,
       arrival_time: r.arrival_time || '',
       phone_or_note: r.phone_or_note || '',
+      event_day: r.event_day || '10-23',
       created_at: r.created_at,
     }));
 
@@ -252,6 +254,7 @@ export async function syncRsvpsFromSupabase(): Promise<RSVP[]> {
 export async function addRsvp(rsvp: Omit<RSVP, 'id' | 'created_at'>): Promise<RSVP> {
   const newItem: RSVP = {
     ...rsvp,
+    event_day: rsvp.event_day || '10-23',
     id: 'rsvp-' + Date.now(),
     created_at: new Date().toISOString(),
   };
@@ -263,6 +266,7 @@ export async function addRsvp(rsvp: Omit<RSVP, 'id' | 'created_at'>): Promise<RS
       guest_count: rsvp.guest_count,
       arrival_time: rsvp.arrival_time,
       phone_or_note: rsvp.phone_or_note,
+      event_day: newItem.event_day,
     }).select().single();
 
     if (!error && data) {

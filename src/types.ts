@@ -6,6 +6,8 @@ export interface EventConfig {
   year: number;
   month: number;
   day: number;
+  day2?: number;
+  selectedDay?: 1 | 2;
   timeRange: string;
   timeStartTime: string; // for calendar ISO: "15:00"
   timeEndTime: string;   // for calendar ISO: "20:00"
@@ -25,6 +27,7 @@ export interface RSVP {
   guest_count: number;
   arrival_time: string;
   phone_or_note?: string;
+  event_day?: string; // '10-23' | '10-24'
   created_at: string;
 }
 
