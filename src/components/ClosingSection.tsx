@@ -51,21 +51,27 @@ export const ClosingSection: React.FC<ClosingSectionProps> = ({
         className="my-6 max-w-[360px] space-y-4"
       >
         <span className="eyebrow block mb-2">Талархал</span>
-        <p className="font-serif text-[17px] sm:text-[19px] leading-[1.8] text-[#261E19] font-normal">
-          Шинэ өргөөг эд зүйлс бус,<br />
-          <span className="text-[#C29B53] font-medium block my-1">
-            хамтдаа бүтээсэн нандин дурсамж, инээд хөөр, гэгээн ерөөл
-          </span>
-          жинхэнэ гэр болгон дулаацуулдаг билээ.
-        </p>
+        <div className="space-y-3 px-1">
+          <p className="font-serif text-[15.5px] sm:text-[17px] leading-[1.85] text-[#261E19] font-normal">
+            Бидний баяр жаргалыг хуваалцаж, шинэ өргөөний гал голомтыг мялаахаар морилон ирэх{' '}
+            <span className="text-[#A87936] font-medium">
+              эрхэм танд болон танай гэр бүлд
+            </span>{' '}
+            чин сэтгэлийн гүн талархал илэрхийлье.
+          </p>
+
+          <p className="font-serif italic text-[14px] sm:text-[15.5px] leading-[1.75] text-[#785639]">
+            Та бүхний минь гишгэсэн газар бүхэнд өлзий хутаг оршиж, айл гэр бүлд тань аз жаргал, сайн сайхан бүхэн үргэлж бялхаж явах болтугай.
+          </p>
+        </div>
 
         <div className="ulzii-ornament my-4" aria-hidden="true" />
 
         <div className="pt-2">
-          <p className="display text-2xl text-[#261E19]">
-            Таныг хүндэтгэн урьж байна 🤍
+          <p className="eyebrow text-[11px] tracking-[0.25em] text-[#8A7565] mb-1">
+            Гүнээ хүндэтгэсэн
           </p>
-          <p className="font-serif text-sm text-[#8A7565] mt-1 tracking-wider uppercase">
+          <p className="display text-2xl sm:text-3xl text-[#261E19]">
             {config.hosts}
           </p>
         </div>

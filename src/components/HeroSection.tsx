@@ -56,7 +56,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }
           Хүндэт Зочин Танаа
         </h1>
         <span className="patronym block text-sm tracking-[0.2em] mb-1.5 text-[#C29B53]">
-          Батдорж & Ариунбаяр нарын
+          {config.hosts || 'Батдорж & Ариунбаяр'} нарын
         </span>
         <span className="eyebrow block mb-5 text-xs tracking-[0.2em] text-[#8A7565]">
           Шинэ гэрийн цайллага
@@ -66,7 +66,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }
         <figure className="arch arch--tall hero-photo my-5 max-w-[290px] mx-auto">
           <img
             src={`${import.meta.env.BASE_URL}images/hero-portrait.png`}
-            alt="Батдорж & Ариунбаяр"
+            alt={config.hosts || 'Батдорж & Ариунбаяр'}
             width={880}
             height={1100}
             fetchPriority="high"
@@ -87,7 +87,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ config, onScrollDown }
           <p className="datemark">
             2026 <i>·</i> 10 <i>·</i> {targetDay}
             <span className="date-sub">
-              {targetWeekday} гараг <i>·</i> {config.timeRange || '15:00 цагт'}
+              {targetWeekday} гараг{config.timeRange?.trim() ? (
+                <> <i>·</i> {config.timeRange}</>
+              ) : null}
             </span>
           </p>
         </div>

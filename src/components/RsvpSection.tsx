@@ -12,7 +12,8 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccess
   const [attending, setAttending] = useState<'yes' | 'with_family' | 'no'>('yes');
   const [guestName, setGuestName] = useState('');
   const [phone, setPhone] = useState('');
-  const [eventDay, setEventDay] = useState<'10-23' | '10-24'>(selectedDay === 2 ? '10-24' : '10-23');
+  const isDay2 = selectedDay === 2;
+  const eventDay: '10-23' | '10-24' = isDay2 ? '10-24' : '10-23';
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
   const [note, setNote] = useState('');
@@ -182,34 +183,21 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccess
               />
             </label>
 
-            {/* 3. Event Day Toggle */}
+            {/* 3. Event Day (Fixed to active invitation day, non-selectable) */}
             <div className="form-field">
               <span className="form-field-label">Цайллагын өдөр</span>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <button
-                  type="button"
-                  onClick={() => setEventDay('10-23')}
-                  className={`py-2 px-3 rounded-lg border text-xs font-serif transition-all cursor-pointer ${
-                    eventDay === '10-23'
-                      ? 'border-[#261E19] bg-[#261E19] text-[#FAF7F2] shadow-xs'
-                      : 'border-[#DFC694] bg-[#FAF7F2]/80 text-[#261E19] hover:bg-white'
-                  }`}
-                >
-                  <span className="block font-semibold">10 сарын 23</span>
-                  <span className="text-[10px] opacity-80">Баасан гараг</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEventDay('10-24')}
-                  className={`py-2 px-3 rounded-lg border text-xs font-serif transition-all cursor-pointer ${
-                    eventDay === '10-24'
-                      ? 'border-[#261E19] bg-[#261E19] text-[#FAF7F2] shadow-xs'
-                      : 'border-[#DFC694] bg-[#FAF7F2]/80 text-[#261E19] hover:bg-white'
-                  }`}
-                >
-                  <span className="block font-semibold">10 сарын 24</span>
-                  <span className="text-[10px] opacity-80">Бямба гараг</span>
-                </button>
+              <div className="mt-1 py-2 px-3.5 rounded-lg border border-[#DFC694]/70 bg-[#FAF7F2]/90 flex items-center justify-between">
+                <div>
+                  <span className="block font-semibold text-xs text-[#261E19]">
+                    10 сарын {isDay2 ? '24' : '23'}
+                  </span>
+                  <span className="text-[11px] text-[#8A7565]">
+                    {isDay2 ? 'Бямба гараг' : 'Баасан гараг'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-serif uppercase tracking-wider text-[#9A7432] bg-[#FAF7F2] px-2 py-0.5 rounded border border-[#C29B53]/30">
+                  Тогтсон өдөр
+                </span>
               </div>
             </div>
 

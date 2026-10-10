@@ -17,13 +17,12 @@ export const DateCountdownSection: React.FC<{ config: EventConfig }> = ({ config
     const dayOfMonthStr = String(targetDay).padStart(2, '0');
     const startIso = `${config.year || 2026}10${dayOfMonthStr}T150000`;
     const endIso = `${config.year || 2026}10${dayOfMonthStr}T210000`;
-    const dayLabel = isDay2 ? '2 дахь өдөр' : '1 дэх өдөр';
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: `${config.hosts} · Шинэ гэрийн цайллага (${dayLabel})`,
+      text: `${config.hosts} · Шинэ гэрийн цайллага`,
       dates: `${startIso}/${endIso}`,
       location: [config.locationCity, config.locationDistrict, config.locationAddress].filter(Boolean).join(', '),
-      details: `Шинэ гэрийн цайллагын урилга (${dayLabel}) - ${config.hosts}`,
+      details: `Шинэ гэрийн цайллагын урилга - ${config.hosts}`,
     });
     window.open('https://calendar.google.com/calendar/render?' + params, '_blank', 'noopener,noreferrer');
   };
@@ -77,9 +76,11 @@ export const DateCountdownSection: React.FC<{ config: EventConfig }> = ({ config
           <p className="font-serif text-[15px] text-[#261E19] font-medium">
             2026 оны 10 сарын {targetDay}, {targetWeekday} гараг
           </p>
-          <p className="font-serif text-xs text-[#8A7565] italic mt-1">
-            {isDay2 ? 'Хоёр дахь өдрийн цайллага · 15:00 цагт' : 'Эхний өдрийн цайллага · 15:00 цагт'}
-          </p>
+          {config.timeRange?.trim() && (
+            <p className="font-serif text-xs text-[#8A7565] italic mt-1">
+              {config.timeRange}
+            </p>
+          )}
 
           <button
             type="button"

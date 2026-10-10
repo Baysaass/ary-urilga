@@ -810,6 +810,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onChange={(e) =>
                       setEditingConfig({ ...editingConfig, timeRange: e.target.value })
                     }
+                    placeholder="Жишээ: 15:00 цагт (оруулахгүй бол урилга дээр цаг харагдахгүй)"
                     className="w-full p-2.5 border border-slate-300 rounded-lg"
                   />
                 </div>
@@ -876,6 +877,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     value={editingConfig.introSubtext}
                     onChange={(e) =>
                       setEditingConfig({ ...editingConfig, introSubtext: e.target.value })
+                    }
+                    className="w-full p-2.5 border border-slate-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-slate-700 mb-1">
+                    Төгсгөлийн талархал
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editingConfig.closingQuote}
+                    onChange={(e) =>
+                      setEditingConfig({ ...editingConfig, closingQuote: e.target.value })
                     }
                     className="w-full p-2.5 border border-slate-300 rounded-lg"
                   />

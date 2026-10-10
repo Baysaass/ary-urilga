@@ -28,10 +28,9 @@ export const DEFAULT_EVENT_CONFIG: EventConfig = {
   locationCity: 'Даланзадгад',
   locationDistrict: '3-р баг',
   locationAddress: '34-р байр, 3 давхарт, 10 тоот',
-  googleMapsUrl: 'https://maps.app.goo.gl/7k28f1YBfnej28zEA',
-  introQuote: 'Шинэ гэр, шинэ дурсамж, шинэ эхлэл.',
-  introSubtext: 'Шинэ гэрийнхээ босгыг мялааж, баярт мөчөө та бүхэнтэйгээ хуваалцахыг хүсэж байна.',
-  closingQuote: 'Шинэ гэрийг эд зүйлс биш,\nхамтдаа бүтээсэн дурсамж, инээд хөөр, сайхан ерөөл гэр болгодог.',
+  introQuote: 'Ургах нарыг угтан сүндэрлэсэн\nУраг төрөл батжин дэлгэрсэн\nЭцэг өвгөдийнхөө голомтыг\nөргөтгөн тэлж буй бидний',
+  introSubtext: 'Шинэ байшингийн цайллаганд хүрэлцэн ирэхийг урьж байна.',
+  closingQuote: 'Бидний баяр жаргалыг хуваалцаж, шинэ өргөөний гал голомтыг мялаахаар морилон ирэх эрхэм танд болон танай гэр бүлд чин сэтгэлийн гүн талархал илэрхийлье.\n\nТа бүхний минь гишгэсэн газар бүхэнд өлзий хутаг оршиж, айл гэр тань аз жаргал, сайн сайхан бүхнээр үргэлж бялхаж явах болтугай.',
 };
 
 export const DEFAULT_BLESSINGS: Blessing[] = [];
@@ -119,6 +118,15 @@ export function getEventConfig(): EventConfig {
       const day2 = !parsed.day2 ? 24 : parsed.day2;
       const month = (!parsed.month || parsed.month === 9) ? 10 : parsed.month;
       const year = parsed.year || 2026;
+      const closingQuote = (!parsed.closingQuote || parsed.closingQuote.includes('эд зүйлс'))
+        ? DEFAULT_EVENT_CONFIG.closingQuote
+        : parsed.closingQuote;
+      const introQuote = (!parsed.introQuote || parsed.introQuote.includes('Шинэ гэр, шинэ дурсамж'))
+        ? DEFAULT_EVENT_CONFIG.introQuote
+        : parsed.introQuote;
+      const introSubtext = (!parsed.introSubtext || parsed.introSubtext.includes('босгыг мялааж'))
+        ? DEFAULT_EVENT_CONFIG.introSubtext
+        : parsed.introSubtext;
       return {
         ...DEFAULT_EVENT_CONFIG,
         ...parsed,
@@ -126,6 +134,9 @@ export function getEventConfig(): EventConfig {
         day2,
         month,
         year,
+        introQuote,
+        introSubtext,
+        closingQuote,
       };
     }
   } catch (e) {
@@ -180,7 +191,7 @@ export async function syncEventConfigFromSupabase(): Promise<EventConfig | null>
         month,
         day,
         day2,
-        timeRange: data.time_range || DEFAULT_EVENT_CONFIG.timeRange,
+        timeRange: data.time_range !== undefined ? data.time_range : DEFAULT_EVENT_CONFIG.timeRange,
         locationCity: data.location_city || DEFAULT_EVENT_CONFIG.locationCity,
         locationDistrict: data.location_district || DEFAULT_EVENT_CONFIG.locationDistrict,
         locationAddress: data.location_address || DEFAULT_EVENT_CONFIG.locationAddress,
