@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Check, Heart, Minus, Plus, Sparkles, Send } from 'lucide-react';
+import { motion } from 'motion/react';
+import { LoaderCircle } from 'lucide-react';
 import { addRsvp } from '../lib/storage';
 
 interface RsvpSectionProps {
@@ -9,32 +9,62 @@ interface RsvpSectionProps {
 }
 
 export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccessSubmit }) => {
-  const [attending, setAttending] = useState<'yes' | 'no' | null>(null);
+  const [attending, setAttending] = useState<'yes' | 'with_family' | 'no'>('yes');
   const [guestName, setGuestName] = useState('');
-  const [guestCount, setGuestCount] = useState(2);
-  const chosenDay: '10-23' | '10-24' = selectedDay === 2 ? '10-24' : '10-23';
+  const [phone, setPhone] = useState('');
+  const [eventDay, setEventDay] = useState<'10-23' | '10-24'>(selectedDay === 2 ? '10-24' : '10-23');
+  const [adults, setAdults] = useState<number>(1);
+  const [children, setChildren] = useState<number>(0);
   const [note, setNote] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const handleAdultsChange = (delta: number) => {
+    setAdults((prev) => Math.max(1, Math.min(20, prev + delta)));
+  };
+
+  const handleChildrenChange = (delta: number) => {
+    setChildren((prev) => Math.max(0, Math.min(20, prev + delta)));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) {
-      setErrorMessage('Та өөрийн нэрээ оруулна уу');
+      setErrorMessage('Нэрээ бичнэ үү');
+      return;
+    }
+    if (!phone.trim()) {
+      setErrorMessage('Утасны дугаараа бичнэ үү');
       return;
     }
     setErrorMessage('');
     setIsSubmitting(true);
 
     try {
+      const isAttending = attending !== 'no';
+      const adultCount = isAttending ? Math.max(1, adults) : 0;
+      const childCount = isAttending ? Math.max(0, children) : 0;
+      const totalCount = adultCount + childCount;
+
+      const formattedNote = [
+        `Утас: ${phone.trim()}`,
+        isAttending ? `(Том хүн: ${adultCount}, Хүүхэд: ${childCount})` : '',
+        note.trim() ? `Тэмдэглэл: ${note.trim()}` : '',
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
       await addRsvp({
         guest_name: guestName.trim(),
-        attending: attending || 'yes',
-        guest_count: attending === 'yes' ? guestCount : 0,
+        attending,
+        guest_count: totalCount,
+        adults: adultCount,
+        children: childCount,
         arrival_time: '',
-        phone_or_note: note.trim(),
-        event_day: chosenDay,
+        phone_or_note: formattedNote,
+        event_day: eventDay,
       });
 
       setIsSubmitting(false);
@@ -42,241 +72,291 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ selectedDay, onSuccess
       if (onSuccessSubmit) onSuccessSubmit();
     } catch (err) {
       console.error(err);
-      setErrorMessage('Хадгалж чадсангүй. Дахин оролдоно уу.');
+      setErrorMessage('Алдаа гарлаа. Дахин оролдоно уу.');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section id="rsvp-section" className="relative py-16 px-6 select-none">
-      <div className="max-w-[360px] mx-auto rounded-3xl bg-[#FAF7F0] border border-[#B49368]/25 p-6 sm:p-7 paper-card-shadow overflow-hidden">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <span className="text-[11px] uppercase tracking-[0.22em] text-[#B49368] font-medium block mb-1">
-            ХҮРЭЛЦЭН ИРЭХ БАТАЛГААЖУУЛАЛТ
-          </span>
-          <h2 className="font-serif-title text-2xl text-[#29231E] font-medium">
-            Та хүрэлцэн ирэх үү?
-          </h2>
-          <p className="font-sans-ui text-xs text-[#29231E]/70 mt-1">
-            Зочдоо тав тухтай хүлээн авахад бидэнд тусална уу
-          </p>
-        </div>
+    <section id="rsvp-section" className="relative pt-16 pb-12 px-5 text-center select-none overflow-hidden">
+      <div className="max-w-[420px] mx-auto">
+        {/* Top Gold Rule */}
+        <span className="rule" aria-hidden="true" />
 
-        {/* Success State */}
+        <span className="eyebrow block mt-2 mb-1">Хүрэлцэн ирэх хариу</span>
+        <h2 className="title title--long text-[#261E19] mb-2">Хүрэлцэн ирэхээ мэдэгдэх</h2>
+        <p className="font-serif text-[14px] text-[#635246] italic mb-6">
+          Шинэ өргөөний баярыг хамтдаа хуваалцахаар хүрэлцэн ирэх хариугаа урьдчилан илгээнэ үү.
+        </p>
+
         {isSubmitted ? (
+          /* Confirmation Success View */
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="py-8 text-center space-y-4"
+            className="rsvp-done-card shadow-md"
           >
-            <div className="w-16 h-16 rounded-full bg-[#B6785D]/15 text-[#B6785D] flex items-center justify-center mx-auto mb-3">
-              <Heart className="w-8 h-8 fill-[#B6785D]" />
-            </div>
-
-            <h3 className="font-serif-title text-2xl text-[#29231E] font-medium">
-              Баярлалаа 🤍
+            <div className="done-mark-circle" aria-hidden="true">✓</div>
+            <h3 className="display text-xl sm:text-2xl text-[#261E19] mb-1">
+              Хариу илгээсэнд гүнээ талархъя! ♡
             </h3>
+            <p className="font-serif text-xs text-[#2F7A57] italic mb-4">
+              Таны хүрэлцэн ирэх мэдээллийг бүртгэж авлаа.
+            </p>
 
-            <div className="font-sans-ui text-sm text-[#29231E]/80 leading-relaxed px-2">
-              <p>Таны хариуг хүлээн авлаа.</p>
-              <p className="font-serif-editorial text-base text-[#B6785D] mt-2">
-                Таныг шинэ гэртээ тэсэн ядан хүлээж байна.
-              </p>
-            </div>
+            <dl className="done-summary-list">
+              <dt>Нэр</dt>
+              <dd>{guestName}</dd>
 
-            <div className="pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setAttending(null);
-                  setGuestName('');
-                }}
-                className="text-xs text-[#B49368] hover:underline cursor-pointer"
-              >
-                Өөр зочны хариу бүртгэх
-              </button>
-            </div>
+              <dt>Утас</dt>
+              <dd>{phone}</dd>
+
+              <dt>Хариу</dt>
+              <dd>
+                {attending === 'yes' && 'Хүрэлцэн ирнэ'}
+                {attending === 'with_family' && 'Гэр бүлээрээ хүрэлцэн ирнэ'}
+                {attending === 'no' && 'Хүндэтгэх шалтгаанаар очиж амжихгүй'}
+              </dd>
+
+              <dt>Өдөр</dt>
+              <dd>
+                {eventDay === '10-23' ? '10 сарын 23 (Баасан)' : '10 сарын 24 (Бямба)'}
+              </dd>
+
+              {attending !== 'no' && (
+                <>
+                  <dt>Том хүн</dt>
+                  <dd>{adults} хүн</dd>
+
+                  {children > 0 && (
+                    <>
+                      <dt>Хүүхэд</dt>
+                      <dd>{children} хүүхэд</dd>
+                    </>
+                  )}
+                </>
+              )}
+            </dl>
+
+            <button
+              type="button"
+              onClick={() => setIsSubmitted(false)}
+              className="mt-2 px-5 py-2 border border-[#C29B53] text-xs font-serif tracking-widest uppercase text-[#261E19] hover:bg-[#FAF7F2] transition-colors cursor-pointer"
+            >
+              Мэдээлэл засах
+            </button>
           </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Step 1: Attending Choice */}
-            <div className="space-y-2.5">
-              <div className="grid grid-cols-1 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAttending('yes');
-                    setErrorMessage('');
-                  }}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    attending === 'yes'
-                      ? 'border-[#B6785D] bg-[#F7EEE8] text-[#29231E] shadow-sm'
-                      : 'border-[#B49368]/20 bg-[#FBF8F2] hover:bg-white text-[#29231E]/90'
-                  }`}
-                >
-                  <span className="font-sans-ui text-sm font-medium">
-                    Тэгэлгүй яах вэ 🤍
-                  </span>
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      attending === 'yes'
-                        ? 'border-[#B6785D] bg-[#B6785D] text-white'
-                        : 'border-[#B49368]/40'
-                    }`}
-                  >
-                    {attending === 'yes' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </button>
+          /* Interactive RSVP Form per urilga.online */
+          <form onSubmit={handleSubmit} className="text-left mt-6" noValidate>
+            {/* 1. Name Field */}
+            <label className="form-field">
+              <span className="form-field-label">Таны нэр</span>
+              <input
+                type="text"
+                value={guestName}
+                onChange={(e) => {
+                  setGuestName(e.target.value);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                maxLength={100}
+                placeholder="Нэрээ оруулна уу"
+                autoComplete="name"
+              />
+            </label>
 
+            {/* 2. Phone Field */}
+            <label className="form-field">
+              <span className="form-field-label">Утасны дугаар</span>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                maxLength={20}
+                placeholder="Утасны дугаараа бичнэ үү"
+                inputMode="tel"
+                autoComplete="tel"
+              />
+            </label>
+
+            {/* 3. Event Day Toggle */}
+            <div className="form-field">
+              <span className="form-field-label">Цайллагын өдөр</span>
+              <div className="grid grid-cols-2 gap-2 mt-1">
                 <button
                   type="button"
-                  onClick={() => {
-                    setAttending('no');
-                    setErrorMessage('');
-                  }}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    attending === 'no'
-                      ? 'border-[#8898A5] bg-[#EFF2F5] text-[#29231E] shadow-sm'
-                      : 'border-[#B49368]/20 bg-[#FBF8F2] hover:bg-white text-[#29231E]/90'
+                  onClick={() => setEventDay('10-23')}
+                  className={`py-2 px-3 rounded-lg border text-xs font-serif transition-all cursor-pointer ${
+                    eventDay === '10-23'
+                      ? 'border-[#261E19] bg-[#261E19] text-[#FAF7F2] shadow-xs'
+                      : 'border-[#DFC694] bg-[#FAF7F2]/80 text-[#261E19] hover:bg-white'
                   }`}
                 >
-                  <span className="font-sans-ui text-sm font-normal text-[#29231E]/80">
-                    Харамсалтай нь амжихгүй
-                  </span>
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      attending === 'no'
-                        ? 'border-[#8898A5] bg-[#8898A5] text-white'
-                        : 'border-[#B49368]/40'
-                    }`}
-                  >
-                    {attending === 'no' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
+                  <span className="block font-semibold">10 сарын 23</span>
+                  <span className="text-[10px] opacity-80">Баасан гараг</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEventDay('10-24')}
+                  className={`py-2 px-3 rounded-lg border text-xs font-serif transition-all cursor-pointer ${
+                    eventDay === '10-24'
+                      ? 'border-[#261E19] bg-[#261E19] text-[#FAF7F2] shadow-xs'
+                      : 'border-[#DFC694] bg-[#FAF7F2]/80 text-[#261E19] hover:bg-white'
+                  }`}
+                >
+                  <span className="block font-semibold">10 сарын 24</span>
+                  <span className="text-[10px] opacity-80">Бямба гараг</span>
                 </button>
               </div>
             </div>
 
-            {/* Revealed Sub-Steps when a choice is selected */}
-            <AnimatePresence>
-              {attending !== null && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.45, ease: 'easeOut' }}
-                  className="space-y-5 overflow-hidden pt-1"
-                >
-                  {/* Guest Name */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-[#29231E]/80">
-                      Таны нэр <span className="text-[#B6785D]">*</span>
-                    </label>
+            {/* 4. Attendance Radios */}
+            <fieldset className="form-field">
+              <legend className="form-field-label">Таны хариу</legend>
+              <div className="space-y-1">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="attendance"
+                    value="yes"
+                    checked={attending === 'yes'}
+                    onChange={() => setAttending('yes')}
+                  />
+                  <span>Хүрэлцэн ирнэ</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="attendance"
+                    value="with_family"
+                    checked={attending === 'with_family'}
+                    onChange={() => {
+                      setAttending('with_family');
+                      if (adults < 2) setAdults(2);
+                    }}
+                  />
+                  <span>Гэр бүлээрээ хүрэлцэн ирнэ</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="attendance"
+                    value="no"
+                    checked={attending === 'no'}
+                    onChange={() => setAttending('no')}
+                  />
+                  <span>Хүндэтгэх шалтгаанаар очиж амжихгүй</span>
+                </label>
+              </div>
+            </fieldset>
+
+            {/* 5. Separate Stepper Counts for Adults and Children (Shown when attending) */}
+            {attending !== 'no' && (
+              <div className="space-y-4 my-6 p-4 rounded-xl border border-[#DFC694]/70 bg-[#FAF7F2]/90 shadow-2xs">
+                {/* Adults Stepper */}
+                <div className="form-field mb-0">
+                  <span className="form-field-label flex justify-between items-center">
+                    <span>Том хүний тоо</span>
+                    <span className="text-xs text-[#261E19] font-semibold">{adults} том хүн</span>
+                  </span>
+                  <div className="stepper mt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleAdultsChange(-1)}
+                      aria-label="Том хүний тоог хасах"
+                    >
+                      −
+                    </button>
                     <input
-                      type="text"
-                      required
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      placeholder="Жишээ: Ариунаа & Мөнхбат"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#B49368]/30 bg-white text-sm text-[#29231E] placeholder:text-[#29231E]/30 focus:outline-none focus:border-[#B6785D] transition-colors"
+                      type="number"
+                      name="adults"
+                      min={1}
+                      max={20}
+                      value={adults}
+                      onChange={(e) => setAdults(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                      inputMode="numeric"
                     />
+                    <button
+                      type="button"
+                      onClick={() => handleAdultsChange(1)}
+                      aria-label="Том хүний тоог нэмэх"
+                    >
+                      +
+                    </button>
                   </div>
+                </div>
 
-                  {/* Event Day selection if attending */}
-                  {attending === 'yes' && (
-                    <div className="p-3 rounded-xl bg-[#F7EEE8] border border-[#B6785D]/30 flex items-center justify-between text-xs">
-                      <span className="text-[#29231E]/80 font-medium">Хүрэлцэн ирэх өдөр:</span>
-                      <span className="font-semibold text-[#B6785D]">
-                        {selectedDay === 2 ? '10 сарын 24 (Бямба)' : '10 сарын 23 (Баасан)'}
-                      </span>
-                    </div>
-                  )}
-
-                  {attending === 'yes' && (
-                    <>
-                      {/* Guest Count Counter */}
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[#29231E]/80">
-                          Та хэдүүлээ ирэх вэ?
-                        </label>
-                        <div className="flex items-center justify-between p-2 rounded-xl border border-[#B49368]/30 bg-white">
-                          <button
-                            type="button"
-                            onClick={() => setGuestCount((c) => Math.max(1, c - 1))}
-                            className="w-9 h-9 rounded-lg bg-[#FAF7F0] hover:bg-[#F3EBDD] flex items-center justify-center text-[#29231E] active:scale-95 transition-all cursor-pointer"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="font-serif-title text-2xl font-medium text-[#29231E] tabular-nums">
-                              {guestCount}
-                            </span>
-                            <span className="text-xs text-[#29231E]/60 font-sans-ui">
-                              хүн
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setGuestCount((c) => Math.min(10, c + 1))}
-                            className="w-9 h-9 rounded-lg bg-[#FAF7F0] hover:bg-[#F3EBDD] flex items-center justify-center text-[#29231E] active:scale-95 transition-all cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                    </>
-                  )}
-
-                  {/* Optional Note / Phone */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-[#29231E]/80">
-                      {attending === 'yes'
-                        ? 'Утасны дугаар эсвэл зурвас (заавал биш)'
-                        : 'Сэтгэлийн үг, мэндчилгээ (заавал биш)'}
-                    </label>
+                {/* Children Stepper */}
+                <div className="form-field mb-0">
+                  <span className="form-field-label flex justify-between items-center">
+                    <span>Хүүхдийн тоо</span>
+                    <span className="text-xs text-[#261E19] font-semibold">{children} хүүхэд</span>
+                  </span>
+                  <div className="stepper mt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleChildrenChange(-1)}
+                      aria-label="Хүүхдийн тоог хасах"
+                    >
+                      −
+                    </button>
                     <input
-                      type="text"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder={
-                        attending === 'yes'
-                          ? 'Утас: 9911-XXXX'
-                          : 'Баярт мөчид амжилт хүсье...'
-                      }
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#B49368]/30 bg-white text-xs text-[#29231E] placeholder:text-[#29231E]/30 focus:outline-none focus:border-[#B6785D] transition-colors"
+                      type="number"
+                      name="children"
+                      min={0}
+                      max={20}
+                      value={children}
+                      onChange={(e) => setChildren(Math.max(0, Math.min(20, parseInt(e.target.value) || 0)))}
+                      inputMode="numeric"
                     />
+                    <button
+                      type="button"
+                      onClick={() => handleChildrenChange(1)}
+                      aria-label="Хүүхдийн тоог нэмэх"
+                    >
+                      +
+                    </button>
                   </div>
+                </div>
+              </div>
+            )}
 
-                  {errorMessage && (
-                    <p className="text-xs text-rose-600 font-medium text-center">
-                      {errorMessage}
-                    </p>
-                  )}
+            {/* Optional Note Field */}
+            <label className="form-field">
+              <span className="form-field-label">Гэрийн эздэд хүргэх зурвас (заавал биш)</span>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Жишээ: 16:00 цагийн үед очно, баярын мэнд хүргэе гэх мэт"
+              />
+            </label>
 
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-[#B6785D] text-white font-medium text-sm shadow-md hover:bg-[#A3664C] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <span className="text-xs">Илгээж байна...</span>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>
-                          {attending === 'yes' ? 'Ирэхээ баталгаажуулах' : 'Хариу илгээх'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                </motion.div>
+            {/* Error Message */}
+            {errorMessage && (
+              <p className="text-xs font-serif italic text-red-600 mb-4 text-center">
+                {errorMessage}
+              </p>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="ceremonial-btn flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <LoaderCircle className="w-4 h-4 animate-spin text-[#C0913F]" />
+                  <span>Илгээж байна...</span>
+                </>
+              ) : (
+                <span>Хариу илгээх</span>
               )}
-            </AnimatePresence>
+            </button>
           </form>
         )}
       </div>

@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LoaderCircle, Volume2, VolumeX } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 
 const AUDIO_SRC = `${import.meta.env.BASE_URL}audio/nair.mp3`;
 const LOAD_ERROR = 'Дуу ачаалсангүй. Дахин тоглуулж үзнэ үү.';
 
-export const AudioPlayer: React.FC = () => {
+interface AudioPlayerProps {
+  variant?: 'floating' | 'header';
+}
+
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ variant = 'floating' }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,7 +18,7 @@ export const AudioPlayer: React.FC = () => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio) audio.volume = 0.35;
+    if (audio) audio.volume = 0.38;
     return () => {
       wantsPlaybackRef.current = false;
       playRequestRef.current += 1;
@@ -47,7 +51,6 @@ export const AudioPlayer: React.FC = () => {
     try {
       await audio.play();
     } catch {
-      // A pause or a newer request can cancel an in-flight play promise.
       if (request !== playRequestRef.current || !wantsPlaybackRef.current) return;
       wantsPlaybackRef.current = false;
       setIsPlaying(false);
@@ -55,10 +58,6 @@ export const AudioPlayer: React.FC = () => {
       setError(LOAD_ERROR);
     }
   };
-
-  const label = isLoading
-    ? 'Дуу ачаалж байна'
-    : isPlaying ? 'Ая эгшиглэж байна' : error ? 'Дахин тоглуулах' : 'Ая тоглуулах';
 
   return (
     <>
@@ -93,22 +92,70 @@ export const AudioPlayer: React.FC = () => {
           setError(LOAD_ERROR);
         }}
       />
-      <button
-        type="button"
-        onClick={toggleSound}
-        title={error || (isPlaying ? 'Дашням — Найр · Ая зогсоох' : 'Дашням — Найр · Ая тоглуулах')}
-        className="flex min-h-9 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF7F0]/95 border border-[#B49368]/30 text-[#29231E] shadow-sm hover:bg-[#FAF7F0] active:scale-95 transition-all text-xs font-medium cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B6785D]"
-        aria-label={isPlaying || isLoading ? 'Ая зогсоох' : error ? 'Дууг дахин тоглуулах' : 'Ая тоглуулах'}
-        aria-pressed={isPlaying}
-        aria-busy={isLoading}
-      >
-        {isLoading
-          ? <LoaderCircle className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-          : isPlaying
-            ? <Volume2 className="w-3.5 h-3.5 text-[#B6785D]" aria-hidden="true" />
-            : <VolumeX className="w-3.5 h-3.5 text-[#29231E]/60" aria-hidden="true" />}
-        <span className={`text-[11px] tracking-tight ${isPlaying ? 'text-[#B6785D]' : 'text-[#29231E]/70'}`}>{label}</span>
-      </button>
+
+      {variant === 'floating' ? (
+        <button
+          id="music-btn"
+          type="button"
+          onClick={toggleSound}
+          className="music-btn"
+          aria-label={isPlaying ? 'Хөгжим зогсоох' : 'Хөгжим тоглуулах'}
+          aria-pressed={isPlaying}
+          aria-busy={isLoading}
+          title={error || (isPlaying ? 'Дашням — Найр · Хөгжим зогсоох' : 'Дашням — Найр · Хөгжим тоглуулах')}
+        >
+          {/* Rotating Circular Text Stamp Ring */}
+          <svg className="music-ring" viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <path
+                id="ring-path"
+                d="M 60,60 m -45,0 a 45,45 0 1,1 90,0 a 45,45 0 1,1 -90,0"
+              />
+            </defs>
+            <text className="ring-text">
+              <textPath href="#ring-path" startOffset="0" textLength="282.7" lengthAdjust="spacing">
+                Хөгжим · Хөгжим · Хөгжим · Хөгжим ·
+              </textPath>
+            </text>
+          </svg>
+
+          {/* Central Play/Pause Icon */}
+          <span className="music-core" aria-hidden="true">
+            {isLoading ? (
+              <LoaderCircle className="w-4 h-4 animate-spin text-[#C29B53]" />
+            ) : isPlaying ? (
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#261E19]">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#261E19] ml-0.5">
+                <polygon points="7,5 20,12 7,19" />
+              </svg>
+            )}
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={toggleSound}
+          className="flex min-h-9 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF7F2]/95 border border-[#C29B53]/40 text-[#261E19] shadow-sm hover:bg-white active:scale-95 transition-all text-xs font-medium cursor-pointer"
+          aria-label={isPlaying ? 'Хөгжим зогсоох' : 'Хөгжим тоглуулах'}
+          aria-pressed={isPlaying}
+        >
+          {isLoading ? (
+            <LoaderCircle className="w-3.5 h-3.5 animate-spin text-[#C29B53]" />
+          ) : isPlaying ? (
+            <span className="w-2 h-2 rounded-full bg-[#C29B53] animate-ping" />
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-[#261E19]/40" />
+          )}
+          <span className="text-[11px] font-serif">
+            {isPlaying ? 'Ая эгшиглэж байна' : 'Ая тоглуулах'}
+          </span>
+        </button>
+      )}
+
       {error && <span role="alert" className="sr-only">{error}</span>}
     </>
   );

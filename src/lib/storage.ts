@@ -258,6 +258,8 @@ export async function syncRsvpsFromSupabase(): Promise<RSVP[]> {
       guest_name: r.guest_name,
       attending: r.attending as 'yes' | 'no',
       guest_count: r.guest_count,
+      adults: typeof r.adults === 'number' ? r.adults : (r.attending === 'no' ? 0 : Math.max(1, r.guest_count || 1)),
+      children: typeof r.children === 'number' ? r.children : 0,
       arrival_time: r.arrival_time || '',
       phone_or_note: r.phone_or_note || '',
       event_day: r.event_day || '10-23',
@@ -273,26 +275,53 @@ export async function syncRsvpsFromSupabase(): Promise<RSVP[]> {
 }
 
 export async function addRsvp(rsvp: Omit<RSVP, 'id' | 'created_at'>): Promise<RSVP> {
+  const isNo = rsvp.attending === 'no';
+  const adults = isNo ? 0 : (rsvp.adults !== undefined ? rsvp.adults : Math.max(1, rsvp.guest_count || 1));
+  const children = isNo ? 0 : (rsvp.children !== undefined ? rsvp.children : 0);
+  const totalCount = isNo ? 0 : (adults + children);
+
   const newItem: RSVP = {
     ...rsvp,
+    adults,
+    children,
+    guest_count: totalCount,
     event_day: rsvp.event_day || '10-23',
     id: 'rsvp-' + Date.now(),
     created_at: new Date().toISOString(),
   };
 
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('rsvps').insert({
-      guest_name: rsvp.guest_name,
-      attending: rsvp.attending,
-      guest_count: rsvp.guest_count,
-      arrival_time: rsvp.arrival_time,
-      phone_or_note: rsvp.phone_or_note,
-      event_day: newItem.event_day,
-    }).select().single();
+    try {
+      const dbAttending = isNo ? 'no' : 'yes';
+      const basePayload: Record<string, unknown> = {
+        guest_name: rsvp.guest_name,
+        attending: dbAttending,
+        guest_count: totalCount,
+        arrival_time: rsvp.arrival_time || '',
+        phone_or_note: rsvp.phone_or_note || '',
+        event_day: newItem.event_day,
+      };
 
-    if (!error && data) {
-      newItem.id = data.id;
-      newItem.created_at = data.created_at;
+      // Try inserting with adults/children first
+      const { data, error } = await supabase.from('rsvps').insert({
+        ...basePayload,
+        adults,
+        children,
+      }).select().single();
+
+      if (!error && data) {
+        newItem.id = data.id;
+        newItem.created_at = data.created_at;
+      } else {
+        // Fallback without adults/children in case columns don't exist yet in Supabase
+        const { data: fallbackData } = await supabase.from('rsvps').insert(basePayload).select().single();
+        if (fallbackData) {
+          newItem.id = fallbackData.id;
+          newItem.created_at = fallbackData.created_at;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to insert RSVP to Supabase:', err);
     }
   }
 

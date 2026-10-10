@@ -23,8 +23,10 @@ export interface EventConfig {
 export interface RSVP {
   id: string;
   guest_name: string;
-  attending: 'yes' | 'no';
+  attending: 'yes' | 'no' | 'with_family' | string;
   guest_count: number;
+  adults?: number;
+  children?: number;
   arrival_time: string;
   phone_or_note?: string;
   event_day?: string; // '10-23' | '10-24'

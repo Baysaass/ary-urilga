@@ -29,8 +29,9 @@ import { BlessingWall } from './components/BlessingWall';
 import { RsvpSection } from './components/RsvpSection';
 import { ClosingSection } from './components/ClosingSection';
 import { AudioPlayer } from './components/AudioPlayer';
+import { JourneyToggle } from './components/JourneyToggle';
 import { AdminDashboard } from './components/AdminDashboard';
-import { Lock, Mail } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { openGuestSession, refreshGuestData, subscribeGuestData, loginHost } from './lib/guest-data';
 import { getActiveEventDay, getEventDayInfo } from './lib/event-day';
 
@@ -141,35 +142,20 @@ export default function App() {
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#B6785D]/5 rounded-full blur-[160px]" />
       </div>
 
-      {/* Floating Header Toolbar (Discreet audio + close envelope + host admin login + desktop switcher) */}
+      {/* Floating Header Toolbar (Discreet close envelope + host admin login + desktop switcher) */}
       <header inert={!isOpen} className="fixed top-3 z-40 w-full max-w-[460px] px-4 flex items-center justify-between pointer-events-none">
-        {/* Left: Audio Player */}
-        <div className="pointer-events-auto">
-          <AudioPlayer />
-        </div>
+        {/* Left spacer (Envelope stays open, no close button) */}
+        <div />
 
-        {/* Center: Discreet Quick Close Envelope Button */}
-        {isOpen && (
-          <button
-            onClick={() => setIsOpen(false)}
-            title="Дугтуй руу буцах (Хаах)"
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-[#FAF7F0]/80 backdrop-blur-md border border-[#B49368]/30 flex items-center gap-1.5 text-[11px] text-[#29231E]/80 hover:text-[#29231E] hover:bg-[#FAF7F0] active:scale-95 transition-all shadow-sm cursor-pointer"
-            aria-label="Дугтуйг хаах"
-          >
-            <Mail className="w-3.5 h-3.5 text-[#B6785D]" />
-            <span className="font-sans-ui text-[10px]">Хаах</span>
-          </button>
-        )}
-
-        {/* Right: Discreet Admin Key */}
+        {/* Right: Discreet Admin Key & Desktop Preview Switcher */}
         <div className="flex items-center gap-1.5 pointer-events-auto">
-          {/* Desktop Preview Width Switcher (hidden on small screens) */}
-          <div className="hidden lg:flex items-center bg-[#29231E]/80 backdrop-blur-md rounded-full border border-white/10 p-0.5 mr-1">
+          {/* Desktop Preview Width Switcher */}
+          <div className="hidden lg:flex items-center bg-[#261E19]/85 backdrop-blur-md rounded-full border border-[#C29B53]/30 p-0.5 mr-1">
             <button
               onClick={() => setDesktopWidth('390')}
               title="iPhone 14 (390px)"
               className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
-                desktopWidth === '390' ? 'bg-[#FAF7F0] text-[#29231E]' : 'text-[#FAF7F0]/60 hover:text-white'
+                desktopWidth === '390' ? 'bg-[#FAF7F2] text-[#261E19]' : 'text-[#FAF7F2]/60 hover:text-white'
               }`}
             >
               390
@@ -178,7 +164,7 @@ export default function App() {
               onClick={() => setDesktopWidth('430')}
               title="iPhone Pro Max (430px)"
               className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
-                desktopWidth === '430' ? 'bg-[#FAF7F0] text-[#29231E]' : 'text-[#FAF7F0]/60 hover:text-white'
+                desktopWidth === '430' ? 'bg-[#FAF7F2] text-[#261E19]' : 'text-[#FAF7F2]/60 hover:text-white'
               }`}
             >
               430
@@ -194,13 +180,21 @@ export default function App() {
               }
             }}
             title="Гэрийн эзний удирдлага (Admin)"
-            className="w-8 h-8 rounded-full bg-[#FAF7F0]/80 backdrop-blur-md border border-[#B49368]/30 flex items-center justify-center text-[#29231E]/75 hover:text-[#29231E] hover:bg-[#FAF7F0] active:scale-95 transition-all shadow-sm cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[#FAF7F2]/95 backdrop-blur-md border border-[#C29B53]/40 flex items-center justify-center text-[#261E19] hover:bg-white active:scale-95 transition-all shadow-xs cursor-pointer"
             aria-label="Admin panel"
           >
-            <Lock className="w-3.5 h-3.5" />
+            <Lock className="w-3.5 h-3.5 text-[#C29B53]" />
           </button>
         </div>
       </header>
+
+      {/* Floating Controls: Journey Auto-Scroll & Rotating Music Badge */}
+      {isOpen && (
+        <div className="pointer-events-auto">
+          <JourneyToggle isOpen={isOpen} />
+          <AudioPlayer variant="floating" />
+        </div>
+      )}
 
       {/* PRIMARY MOBILE INVITATION CONTAINER (Centered max 430-480px per mobile-first specification) */}
       <div
@@ -216,7 +210,6 @@ export default function App() {
         <HeroSection
           config={activeConfig}
           onScrollDown={() => scrollToSection('intro-section')}
-          onCloseInvitation={() => setIsOpen(false)}
         />
 
         {/* 2. INTRODUCTION SECTION */}
@@ -257,20 +250,6 @@ export default function App() {
           onGoToRsvp={() => scrollToSection('rsvp-section')}
           onGoToBlessing={() => scrollToSection('blessing-form-section')}
         />
-
-        {/* Minimal Footer */}
-        <footer className="py-6 px-4 text-center border-t border-[#B49368]/20 bg-[#FAF7F0] text-[11px] text-[#29231E]/50 font-sans-ui">
-          <p>© 2026 {activeConfig.hosts} · Шинэ гэрийн цайллага</p>
-          <button
-            onClick={() => {
-              if (isAdminAuthenticated) setIsAdminOpen(true);
-              else setShowPinModal(true);
-            }}
-            className="text-[10px] text-[#B49368] hover:underline mt-1.5 inline-block cursor-pointer"
-          >
-            Гэрийн эзний удирдлага
-          </button>
-        </footer>
       </div>
 
       {/* The trailing spacer lets the invitation stay pinned throughout the cover scroll. */}

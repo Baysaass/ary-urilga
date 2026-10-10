@@ -1,25 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Calendar } from 'lucide-react';
 import { EventConfig } from '../types';
 
 export const DateCountdownSection: React.FC<{ config: EventConfig }> = ({ config }) => {
   const isDay2 = config.selectedDay === 2;
   const targetDay = isDay2 ? (config.day2 || 24) : 23;
-  const targetWeekday = isDay2 ? 'Бямба гараг' : 'Баасан гараг';
-  const dayBadge = isDay2 ? '2 ДАХЬ ӨДРИЙН УРИЛГА (10.24)' : '1 ДЭХ ӨДРИЙН УРИЛГА (10.23)';
+  const targetWeekday = isDay2 ? 'Бямба' : 'Баасан';
 
-  // Event start time: 15:00 Ulaanbaatar time (UTC+8) -> 07:00 UTC
-  const targetDateUtc = Date.UTC(config.year || 2026, (config.month || 10) - 1, targetDay, 7, 0, 0);
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 10000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const diffMs = targetDateUtc - now;
-  const days = Math.max(0, Math.ceil(diffMs / 86400000));
-  const isEventDay = diffMs <= 0 && diffMs > -86400000;
+  // October 2026 calendar days:
+  // 1st of October 2026 was a Thursday.
+  // Leading empty cells for Mon, Tue, Wed: 3
+  const leadingBlanks = [null, null, null];
+  const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
 
   const handleCalendar = () => {
     const dayOfMonthStr = String(targetDay).padStart(2, '0');
@@ -37,41 +29,67 @@ export const DateCountdownSection: React.FC<{ config: EventConfig }> = ({ config
   };
 
   return (
-    <section id="event-date" className="py-12 px-6 text-center select-none">
-      <div className="max-w-[360px] mx-auto py-9 px-6 rounded-3xl bg-[#F7F1E5]/70 border border-[#B49368]/20 paper-card-shadow">
-        <div className="mb-4">
-          <span className="inline-block px-3 py-1 rounded-full bg-[#B6785D]/10 text-[#B6785D] border border-[#B6785D]/20 text-[11px] font-semibold tracking-wider">
-            {dayBadge}
-          </span>
+    <section id="event-date" className="relative py-12 px-5 text-center select-none overflow-hidden">
+      <div className="max-w-[380px] mx-auto">
+        <span className="eyebrow block mb-2">Хуанли</span>
+        <h3 className="title text-[#261E19] mb-5">Билгийн тоолол</h3>
+
+        {/* Traditional Stamped Month Calendar Grid */}
+        <div className="cal">
+          <p className="cal-title">10 САР <i>·</i> 2026</p>
+
+          <div className="cal-head">
+            <span>Да</span>
+            <span>Мя</span>
+            <span>Лх</span>
+            <span>Пү</span>
+            <span>Ба</span>
+            <span>Бя</span>
+            <span>Ня</span>
+          </div>
+
+          <div className="cal-grid">
+            {leadingBlanks.map((_, idx) => (
+              <span key={`blank-${idx}`} aria-hidden="true" />
+            ))}
+
+            {daysInMonth.map((dayNum) => {
+              const isMarked = dayNum === targetDay;
+              const isOtherEventDay = (dayNum === 23 || dayNum === 24) && !isMarked;
+
+              return (
+                <span
+                  key={dayNum}
+                  className={`
+                    ${isMarked ? 'cal-day--mark' : ''}
+                    ${isOtherEventDay ? 'text-[#C29B53] font-semibold' : ''}
+                  `}
+                >
+                  {dayNum}
+                </span>
+              );
+            })}
+          </div>
         </div>
 
-        <span className="text-xs tracking-[0.25em] text-[#B49368]">{config.year || 2026} ОН</span>
-        <p className="mt-2 font-sans-ui tracking-widest">{config.month || 10} САРЫН</p>
-        <div className="font-serif-title text-8xl leading-none py-3 text-[#29231E]">
-          {String(targetDay).padStart(2, '0')}
+        {/* Date Description & Calendar Save CTA */}
+        <div className="mt-6">
+          <p className="font-serif text-[15px] text-[#261E19] font-medium">
+            2026 оны 10 сарын {targetDay}, {targetWeekday} гараг
+          </p>
+          <p className="font-serif text-xs text-[#8A7565] italic mt-1">
+            {isDay2 ? 'Хоёр дахь өдрийн цайллага · 15:00 цагт' : 'Эхний өдрийн цайллага · 15:00 цагт'}
+          </p>
+
+          <button
+            type="button"
+            onClick={handleCalendar}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#C29B53]/45 bg-[#FAF7F2] text-xs font-serif text-[#261E19] hover:bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#C29B53]" aria-hidden="true" />
+            <span>Google календарт тэмдэглэх</span>
+          </button>
         </div>
-        <p className="font-sans-ui text-lg text-[#29231E]">{targetWeekday}</p>
-        
-        <div className="w-24 h-px bg-[#B49368]/30 mx-auto my-6" />
-
-        {diffMs > 0 ? (
-          <p className="text-sm text-[#29231E]/70 font-sans-ui">
-            Баярын өдөр хүртэл <strong className="text-[#B6785D] text-lg font-serif-title">{days}</strong> өдөр
-          </p>
-        ) : (
-          <p className="font-serif-editorial text-lg text-[#B6785D]">
-            {isEventDay ? 'Баярт өдөр тохиож байна 🤍' : 'Хамтдаа бүтээсэн сайхан дурсамж'}
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={handleCalendar}
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#B49368]/40 bg-white/60 text-xs hover:bg-white cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B6785D] transition-colors"
-        >
-          <Calendar className="w-4 h-4 text-[#B6785D]" aria-hidden="true" />
-          <span>Календарт тэмдэглэх</span>
-        </button>
       </div>
     </section>
   );

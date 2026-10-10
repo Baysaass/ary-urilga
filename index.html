@@ -31,9 +31,25 @@
     
     <link rel="icon" type="image/jpeg" href="/og-image.jpg" />
     <link rel="apple-touch-icon" href="/og-image.jpg" />
-    <meta name="theme-color" content="#FAF7F0" />
+    <meta name="theme-color" content="#FAF7F2" />
+
+    <!-- Google Fonts: Prata & PT Serif for authentic Mongolian ceremonial typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prata&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-[#241F1B] text-[#29231E] antialiased selection:bg-[#B49368]/20 selection:text-[#29231E]">
+  <body class="bg-[#16120E] text-[#261E19] antialiased selection:bg-[#C29B53]/25 selection:text-[#261E19]">
+    <!-- Cloud arch SVG clipPath definitions for portrait and photo frames -->
+    <svg class="svg-defs" aria-hidden="true" focusable="false" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+      <defs>
+        <clipPath id="arch-tall" clipPathUnits="objectBoundingBox">
+          <path d="M0.03,1 L0.03,0.368 A0.21,0.168 0 0 1 0.2867,0.2042 A0.34,0.272 0 0 1 0.7133,0.2042 A0.21,0.168 0 0 1 0.97,0.368 L0.97,1 Z"/>
+        </clipPath>
+        <clipPath id="arch-wide" clipPathUnits="objectBoundingBox">
+          <path d="M0.024,1 L0.024,0.48 A0.216,0.27 0 0 1 0.2574,0.2109 A0.304,0.38 0 0 1 0.7426,0.2109 A0.216,0.27 0 0 1 0.976,0.48 L0.976,1 Z"/>
+        </clipPath>
+      </defs>
+    </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

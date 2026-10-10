@@ -71,8 +71,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Overview Stats
-  const attendingRsvps = rsvps.filter((r) => r.attending === 'yes');
+  const attendingRsvps = rsvps.filter((r) => r.attending !== 'no');
   const totalGuests = attendingRsvps.reduce((acc, r) => acc + (r.guest_count || 1), 0);
+  const totalAdults = attendingRsvps.reduce((acc, r) => acc + (r.adults !== undefined ? r.adults : (r.guest_count || 1)), 0);
+  const totalChildren = attendingRsvps.reduce((acc, r) => acc + (r.children || 0), 0);
   const attendingDay1 = attendingRsvps.filter((r) => (r.event_day || '10-23') === '10-23');
   const totalDay1Guests = attendingDay1.reduce((acc, r) => acc + (r.guest_count || 1), 0);
   const attendingDay2 = attendingRsvps.filter((r) => r.event_day === '10-24');
@@ -115,13 +117,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportRsvpsCsv = () => {
-    const headers = ['Нэр', 'Цайллагын өдөр', 'Ирэх эсэх', 'Хүний тоо', 'Цаг', 'Тэмдэглэл/Утас', 'Огноо'];
+    const headers = ['Нэр', 'Цайллагын өдөр', 'Ирэх эсэх', 'Нийт тоо', 'Том хүн', 'Хүүхэд', 'Тэмдэглэл/Утас', 'Огноо'];
     const rows = rsvps.map((r) => [
       `"${r.guest_name.replace(/"/g, '""')}"`,
       r.event_day === '10-24' ? '10 сарын 24 (Бямба)' : '10 сарын 23 (Баасан)',
-      r.attending === 'yes' ? 'Ирнэ' : 'Амжихгүй',
+      r.attending === 'no' ? 'Амжихгүй' : (r.attending === 'with_family' ? 'Гэр бүлээрээ' : 'Ирнэ'),
       r.guest_count,
-      `"${r.arrival_time}"`,
+      r.adults ?? (r.attending === 'no' ? 0 : r.guest_count),
+      r.children ?? 0,
       `"${(r.phone_or_note || '').replace(/"/g, '""')}"`,
       new Date(r.created_at).toLocaleDateString(),
     ]);
@@ -480,8 +483,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <th className="py-3 px-4 font-semibold">Зочны нэр</th>
                         <th className="py-3 px-4 font-semibold">Цайллагын өдөр</th>
                         <th className="py-3 px-4 font-semibold">Ирэх эсэх</th>
-                        <th className="py-3 px-4 font-semibold">Хүний тоо</th>
-                        <th className="py-3 px-4 font-semibold">Хүрэлцэн ирэх цаг</th>
+                        <th className="py-3 px-4 font-semibold">Нийт тоо</th>
+                        <th className="py-3 px-4 font-semibold">Том хүн</th>
+                        <th className="py-3 px-4 font-semibold">Хүүхэд</th>
                         <th className="py-3 px-4 font-semibold">Утас / Зурвас</th>
                         <th className="py-3 px-4 font-semibold">Бүртгүүлсэн</th>
                       </tr>
@@ -506,19 +510,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            {rsvp.attending === 'yes' ? (
-                              <span className="text-emerald-700 font-medium">
-                                Ирнэ 🤍
-                              </span>
-                            ) : (
+                            {rsvp.attending === 'no' ? (
                               <span className="text-slate-500">Амжихгүй</span>
+                            ) : rsvp.attending === 'with_family' ? (
+                              <span className="text-indigo-700 font-medium">Гэр бүлээрээ 🤍</span>
+                            ) : (
+                              <span className="text-emerald-700 font-medium">Ирнэ 🤍</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 font-medium tabular-nums">
-                            {rsvp.guest_count > 0 ? `${rsvp.guest_count} хүн` : '—'}
+                          <td className="py-3 px-4 font-semibold tabular-nums text-slate-900">
+                            {rsvp.attending !== 'no' && rsvp.guest_count > 0 ? `${rsvp.guest_count} хүн` : '—'}
                           </td>
-                          <td className="py-3 px-4 text-slate-600">
-                            {rsvp.arrival_time || '—'}
+                          <td className="py-3 px-4 tabular-nums text-slate-700">
+                            {rsvp.attending !== 'no' ? `${rsvp.adults ?? rsvp.guest_count} том хүн` : '—'}
+                          </td>
+                          <td className="py-3 px-4 tabular-nums text-slate-700">
+                            {rsvp.attending !== 'no' && (rsvp.children ?? 0) > 0 ? `${rsvp.children} хүүхэд` : '—'}
                           </td>
                           <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
                             {rsvp.phone_or_note || '—'}
