@@ -34,6 +34,8 @@ export const InvitationCover: React.FC<InvitationCoverProps> = ({ config, isOpen
     setIsOpening(true);
     setIsFading(true);
 
+    window.dispatchEvent(new CustomEvent('app:open-invitation'));
+
     const video = videoRef.current;
     if (video) {
       video.playbackRate = 2.5;

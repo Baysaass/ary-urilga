@@ -189,10 +189,10 @@ export default function App() {
       </header>
 
       {/* Floating Controls: Journey Auto-Scroll & Rotating Music Badge */}
+      <AudioPlayer variant="floating" isOpen={isOpen} />
       {isOpen && (
         <div className="pointer-events-auto">
           <JourneyToggle isOpen={isOpen} />
-          <AudioPlayer variant="floating" />
         </div>
       )}
 
